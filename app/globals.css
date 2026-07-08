@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --bg: #faf8f4;
-  --fg: #2a2723;
-  --accent: #0d52a1;
+  --bg: #f7f7f5;
+  --fg: #0a0a0a;
+  --ash: #6b6b6b;
 }
 
 * {
@@ -23,14 +23,7 @@ body {
 }
 
 ::selection {
-  background: rgba(42, 39, 35, 0.12);
-}
-
-/* Utility: very slight frosted-glass card */
-.glass {
-  background: rgba(42, 39, 35, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(42, 39, 35, 0.08);
+  background: rgba(10, 10, 10, 0.1);
 }
 
 @keyframes fade-in {
