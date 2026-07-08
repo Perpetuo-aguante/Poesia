@@ -225,7 +225,7 @@ function drawBlocks(
   W: number,
   H: number,
 ) {
-  ctx.fillStyle = '#f9f6f1';
+  ctx.fillStyle = '#faf8f4';
   ctx.fillRect(0, 0, W, H);
 
   const PADDING_TOP = H * 0.06;
@@ -456,7 +456,7 @@ function drawSerigrafia(
   W: number,
   H: number,
 ) {
-  ctx.fillStyle = '#f9f6f1';
+  ctx.fillStyle = '#faf8f4';
   ctx.fillRect(0, 0, W, H);
 
   const PADDING_TOP = H * 0.06;
