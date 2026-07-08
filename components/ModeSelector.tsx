@@ -21,10 +21,10 @@ export default function ModeSelector({ mode, onChange }: Props) {
           key={m.id}
           onClick={() => onChange(m.id)}
           className={`
-            flex flex-col items-start px-4 py-2.5 rounded border text-left transition-all
+            flex flex-col items-start px-4 py-2.5 rounded-lg border text-left transition-all
             ${mode === m.id
-              ? 'border-[#0d52a1]/50 bg-[#0d52a1]/8 text-[#0d52a1]'
-              : 'border-[#0d52a1]/15 bg-transparent text-[#0d52a1]/45 hover:text-[#0d52a1]/70 hover:border-[#0d52a1]/30'}
+              ? 'border-[#2a2723]/40 bg-[#2a2723]/[0.06] text-[#2a2723]'
+              : 'border-[#2a2723]/12 bg-transparent text-[#2a2723]/40 hover:text-[#2a2723]/70 hover:border-[#2a2723]/25'}
           `}
         >
           <span className="text-sm font-medium leading-tight">{m.label}</span>

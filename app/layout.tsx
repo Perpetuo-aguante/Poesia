@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Poppins } from 'next/font/google';
+import { Poppins, Source_Serif_4 } from 'next/font/google';
 import './globals.css';
 
 const poppins = Poppins({
@@ -9,12 +9,20 @@ const poppins = Poppins({
   display: 'swap',
 });
 
+const sourceSerif = Source_Serif_4({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  style: ['normal', 'italic'],
+  variable: '--font-serif',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'Perpetuo — Visualizador de Poemas',
+  title: 'Geometría Poética',
   description:
     'Un poema convertido en geometría viva. Métrica, ritmo y semántica trazados en el espacio.',
   openGraph: {
-    title: 'Perpetuo',
+    title: 'Geometría Poética',
     description: 'Geometría viva de la poesía',
     type: 'website',
   },
@@ -26,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={poppins.variable}>
-      <body className={`min-h-screen bg-[#f9f6f1] ${poppins.className}`}>{children}</body>
+    <html lang="es" className={`${poppins.variable} ${sourceSerif.variable}`}>
+      <body className={`min-h-screen bg-[#faf8f4] ${poppins.className}`}>{children}</body>
     </html>
   );
 }

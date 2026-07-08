@@ -4,7 +4,9 @@ import { useState, useRef } from 'react';
 
 interface Props {
   onSubmit: (text: string) => void;
+  onCancel?: () => void;
   initialValue?: string;
+  autoFocus?: boolean;
 }
 
 const SAMPLE_POEMS = [
@@ -73,15 +75,13 @@ For Summer has o'er-brimm'd their clammy cells.`,
   },
 ];
 
-export default function PoemInput({ onSubmit, initialValue = '' }: Props) {
+export default function PoemInput({ onSubmit, onCancel, initialValue = '', autoFocus = false }: Props) {
   const [text, setText] = useState(initialValue);
-  const [expanded, setExpanded] = useState(!initialValue);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = () => {
     if (!text.trim()) return;
     onSubmit(text);
-    setExpanded(false);
   };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,63 +99,47 @@ export default function PoemInput({ onSubmit, initialValue = '' }: Props) {
     setText(poem.text);
   };
 
-  if (!expanded) {
-    return (
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setExpanded(true)}
-          className="text-sm text-[#0d52a1]/50 hover:text-[#0d52a1]/80 transition-colors border border-[#0d52a1]/15 hover:border-[#0d52a1]/35 px-3 py-1.5 rounded"
-        >
-          ← cambiar poema
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full flex flex-col gap-4">
-      {/* Sample poems */}
-      <div className="flex flex-wrap gap-2">
-        {SAMPLE_POEMS.map(p => (
-          <button
-            key={p.label}
-            onClick={() => handleSample(p)}
-            className="text-xs text-[#0d52a1]/45 hover:text-[#0d52a1]/75 border border-[#0d52a1]/15 hover:border-[#0d52a1]/30 px-2.5 py-1 rounded transition-colors"
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-
       {/* Text area */}
       <textarea
         value={text}
         onChange={e => setText(e.target.value)}
-        placeholder="Pega tu poema aquí — o escríbelo…"
+        placeholder="Escribe o pega tu poema aquí…"
         rows={12}
-        className="w-full bg-white border border-[#0d52a1]/15 focus:border-[#0d52a1]/40 text-[#1a1a1a] placeholder:text-[#0d52a1]/25
-                   text-sm leading-relaxed font-mono rounded px-4 py-3 resize-none outline-none
+        autoFocus={autoFocus}
+        className="w-full bg-white border border-[#2a2723]/12 focus:border-[#2a2723]/30 text-[#2a2723] placeholder:text-[#2a2723]/25
+                   text-[15px] leading-relaxed font-serif rounded-md px-5 py-4 resize-none outline-none
                    transition-colors"
       />
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center flex-wrap gap-3">
         <button
           onClick={handleSubmit}
           disabled={!text.trim()}
-          className="px-5 py-2 bg-[#0d52a1] text-white text-sm font-medium rounded
-                     hover:bg-[#0a4080] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className="px-5 py-2 bg-[#2a2723] text-[#faf8f4] text-sm font-medium rounded-full
+                     hover:bg-[#1a1815] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          visualizar →
+          visualizar poema
         </button>
 
         <button
           onClick={() => fileRef.current?.click()}
-          className="px-4 py-2 border border-[#0d52a1]/20 text-[#0d52a1]/55 hover:text-[#0d52a1]/80 hover:border-[#0d52a1]/40
-                     text-sm rounded transition-colors"
+          className="px-4 py-2 border border-[#2a2723]/15 text-[#2a2723]/55 hover:text-[#2a2723]/80 hover:border-[#2a2723]/30
+                     text-sm rounded-full transition-colors"
         >
           subir .txt
         </button>
+
+        {onCancel && (
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-[#2a2723]/40 hover:text-[#2a2723]/70 text-sm transition-colors"
+          >
+            cancelar
+          </button>
+        )}
 
         <input
           ref={fileRef}
@@ -164,6 +148,20 @@ export default function PoemInput({ onSubmit, initialValue = '' }: Props) {
           onChange={handleFile}
           className="hidden"
         />
+      </div>
+
+      {/* Sample poems */}
+      <div className="flex flex-wrap gap-2 pt-1">
+        <span className="text-xs text-[#2a2723]/30 self-center font-poppins mr-1">ejemplos:</span>
+        {SAMPLE_POEMS.map(p => (
+          <button
+            key={p.label}
+            onClick={() => handleSample(p)}
+            className="text-xs text-[#2a2723]/45 hover:text-[#2a2723]/75 border border-[#2a2723]/12 hover:border-[#2a2723]/25 px-2.5 py-1 rounded-full transition-colors font-poppins"
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
     </div>
   );

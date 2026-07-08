@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f9f6f1;
-  --fg: #1a1a1a;
+  --bg: #faf8f4;
+  --fg: #2a2723;
   --accent: #0d52a1;
 }
 
@@ -23,14 +23,23 @@ body {
 }
 
 ::selection {
-  background: rgba(13, 82, 161, 0.18);
+  background: rgba(42, 39, 35, 0.12);
 }
 
 /* Utility: very slight frosted-glass card */
 .glass {
-  background: rgba(13, 82, 161, 0.04);
+  background: rgba(42, 39, 35, 0.03);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(13, 82, 161, 0.08);
+  border: 1px solid rgba(42, 39, 35, 0.08);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out both;
 }
 
 /* Canvas wrappers */

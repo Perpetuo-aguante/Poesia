@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        serif: ["Georgia", "Cambria", "'Times New Roman'", "Times", "serif"],
+        serif: ["var(--font-serif)", "Georgia", "Cambria", "'Times New Roman'", "Times", "serif"],
         mono: ["'Courier New'", "Courier", "monospace"],
         poppins: ["Poppins", "sans-serif"],
       },
