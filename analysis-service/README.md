@@ -26,10 +26,25 @@ y la rima; si no está disponible, la app sigue funcionando con su analizador lo
 ## Por qué Python 3.8
 
 Rantanplan fija `spacy==2.2.4`, que no se instala en versiones nuevas de Python.
-El `Dockerfile` usa `python:3.8-slim` y descarga los modelos (`es_core_news_md`
-y los afijos de spacy-affixes) al construir la imagen. La primera carga del
-modelo tarda ~30 s; el servicio la hace al arrancar, y después cada poema tarda
-centésimas de segundo.
+El `Dockerfile` usa `python:3.8-slim` y descarga el modelo de spaCy al construir
+la imagen.
+
+## Modo ligero (por defecto)
+
+La configuración completa de Rantanplan ocupa ~1.4 GB de RAM: el modelo
+mediano de spaCy (`es_core_news_md`) y el separador de enclíticos de
+spacy-affixes. Por defecto el servicio usa el modelo pequeño
+(`es_core_news_sm`) y apaga el separador, y queda en **~250 MB**, con arranque de
+unos segundos. En los poemas de prueba (soneto de Quevedo, romance de Lorca,
+Bécquer, Neruda, Sor Juana y versos con enclíticos como «dímelo», «quiérote»,
+«llévame») la escansión salió **idéntica** a la completa.
+
+Para la configuración completa en una máquina con más memoria:
+
+```bash
+docker build --build-arg FULL=1 -t perpetuo-rantanplan .
+docker run -p 7860:7860 -e RANTANPLAN_MODEL=es_core_news_md -e RANTANPLAN_SPLIT_AFFIXES=1 perpetuo-rantanplan
+```
 
 ## Correrlo en local
 
@@ -45,17 +60,25 @@ Y en la app:
 RANTANPLAN_URL=http://localhost:7860 npm run dev
 ```
 
-## Publicarlo
+## Publicarlo gratis en Render
 
-Cualquier servicio que corra un Dockerfile sirve:
+Hugging Face Spaces ya solo permite Spaces estáticos en el plan gratuito
+(Docker y Gradio son de pago), así que no sirve para este servicio.
+Render sí tiene un plan gratuito con Docker (512 MB de RAM):
 
-- **Hugging Face Spaces** (gratis): crea un Space de tipo *Docker* y sube
-  `app.py`, `requirements.txt` y `Dockerfile`. El puerto 7860 ya está configurado.
-- **Render / Railway**: apunta al directorio `analysis-service/`; ellos pasan `$PORT`.
+1. Entra a [render.com](https://render.com) con tu cuenta de GitHub.
+2. **New → Blueprint** y elige este repositorio. Render lee `render.yaml`
+   (en la raíz) y crea el servicio `perpetuo-rantanplan` en el plan Free.
+3. Cuando termine el primer deploy, copia la URL del servicio
+   (algo como `https://perpetuo-rantanplan.onrender.com`). Puedes comprobarla
+   abriendo `…/health`, que debe responder `{"ok":true}`.
+4. En Vercel → el proyecto → **Settings → Environment Variables**, agrega
+   `RANTANPLAN_URL` con esa URL (sin `/scan` al final) y vuelve a desplegar.
 
-Después, en Vercel, define la variable de entorno `RANTANPLAN_URL` con la URL
-del servicio (sin `/scan` al final). Opcionalmente, limita quién puede llamarlo
-con `ALLOWED_ORIGINS` (lista separada por comas).
+El plan gratuito duerme el servicio tras 15 minutos sin visitas; despertar
+tarda alrededor de un minuto. La app hace un «ping» al servicio en cuanto se
+abre la página, para que esté despierto cuando alguien pegue un poema; si aun
+así no responde a tiempo, la app usa su análisis local.
 
 ## Límites conocidos
 

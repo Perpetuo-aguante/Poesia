@@ -15,9 +15,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from rantanplan import get_scansion
-from rantanplan.pipeline import load_pipeline
+from rantanplan import pipeline
 
 MAX_CHARS = 20000
+
+# Light mode by default so the service fits in 512 MB (Render's free tier):
+#   · es_core_news_sm instead of _md (~250 MB less)
+#   · no spacy-affixes enclitic splitter (~700 MB less)
+# On test poems (sonnets, romances, décimas, enclitics like "dímelo",
+# "quiérote") the scansion was identical. Set RANTANPLAN_MODEL=es_core_news_md
+# and RANTANPLAN_SPLIT_AFFIXES=1 on a larger machine for the full pipeline.
+MODEL = os.environ.get("RANTANPLAN_MODEL", "es_core_news_sm")
+SPLIT_AFFIXES = os.environ.get("RANTANPLAN_SPLIT_AFFIXES", "0") == "1"
 
 app = FastAPI(title="Perpetuo · Rantanplan")
 app.add_middleware(
@@ -49,8 +58,18 @@ class ScanResponse(BaseModel):
 
 @app.on_event("startup")
 def warm_up() -> None:
-    # Cargar spaCy tarda ~30 s; mejor pagarlo al arrancar que en la primera petición.
-    load_pipeline()
+    if not SPLIT_AFFIXES:
+        # Rantanplan reads these token attributes even when the splitter is off.
+        from spacy.tokens import Token
+        for name, default in [("has_affixes", False), ("affixes_kind", None),
+                              ("affixes_lemma", None), ("affixes_length", 0),
+                              ("affixes_rule", None), ("affixes_text", None)]:
+            if not Token.has_extension(name):
+                Token.set_extension(name, default=default)
+    # get_scansion always asks for the default (md) pipeline; point it at ours.
+    nlp = pipeline.load_pipeline(MODEL, split_affixes=SPLIT_AFFIXES)
+    pipeline._load_pipeline["es_core_news_md"] = nlp
+    # Loading spaCy takes a while; pay it at startup, not on the first poem.
     get_scansion("Verde que te quiero verde.")
 
 

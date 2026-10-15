@@ -29,6 +29,11 @@ export default function Home() {
   const [isEditing, setIsEditing] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ w: 900, h: 520 });
 
+  // Wake the scansion service early (free hosts sleep when idle).
+  useEffect(() => {
+    fetch('/api/analyze').catch(() => undefined);
+  }, []);
+
   // Responsive canvas sizing
   useEffect(() => {
     const update = () => {

@@ -1,11 +1,27 @@
 import { NextResponse } from 'next/server';
 
 // Proxies scansion requests to analysis-service (Rantanplan).
-// Set RANTANPLAN_URL (e.g. https://perpetuo-rantanplan.hf.space) to enable it;
+// Set RANTANPLAN_URL (e.g. https://perpetuo-rantanplan.onrender.com) to enable it;
 // without it the app keeps using the local parser.
 
-const TIMEOUT_MS = 15000;
+const TIMEOUT_MS = 25000;
 const MAX_CHARS = 20000;
+
+// Free hosts put the service to sleep when idle; allow time for it to wake.
+export const maxDuration = 30;
+// Never cache: the GET wake-up ping must actually reach the service.
+export const dynamic = 'force-dynamic';
+
+// Wake-up ping: the page calls this on load so the service is awake by the
+// time someone submits a poem. The answer itself doesn't matter.
+export async function GET() {
+  const base = process.env.RANTANPLAN_URL;
+  if (base) {
+    await fetch(`${base.replace(/\/$/, '')}/health`, { signal: AbortSignal.timeout(8000), cache: 'no-store' })
+      .catch(() => undefined);
+  }
+  return new NextResponse(null, { status: 204 });
+}
 
 export async function POST(req: Request) {
   const base = process.env.RANTANPLAN_URL;
