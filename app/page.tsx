@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import { useState, useCallback, useEffect } from 'react';
 import { parsePoem, ParsedPoem } from '@/lib/poemParser';
+import { applyScansion, fetchScansion } from '@/lib/scansion';
+import ArtGallery from '@/components/ArtGallery';
 import PoemInput from '@/components/PoemInput';
 import ModeSelector from '@/components/ModeSelector';
 import PoemLegend from '@/components/PoemLegend';
@@ -43,6 +45,18 @@ export default function Home() {
     setPoem(parsePoem(text));
     setIsEditing(false);
   }, []);
+
+  // Show the local reading right away, then refine meter and stress with
+  // Rantanplan (Spanish only) when the analysis service is available.
+  useEffect(() => {
+    if (!rawText || poem?.language === 'en' || poem?.meterSource !== 'local') return;
+    const controller = new AbortController();
+    fetchScansion(rawText, controller.signal).then(scan => {
+      if (!scan || controller.signal.aborted) return;
+      setPoem(current => (current && current.meterSource === 'local' ? applyScansion(current, scan) : current));
+    });
+    return () => controller.abort();
+  }, [rawText, poem?.language, poem?.meterSource]);
 
   // ── Landing state: no poem loaded yet ──
   if (!poem) {
@@ -125,6 +139,11 @@ export default function Home() {
           visible={legendVisible}
           onToggle={() => setLegendVisible(v => !v)}
         />
+
+        {/* Generative art driven by the poem's fingerprint */}
+        <div className="border-t border-[#2a2723]/8 pt-8 mt-2">
+          <ArtGallery poem={poem} width={canvasSize.w} height={canvasSize.h} />
+        </div>
 
         {/* Reading: syllables, structure, form */}
         <div className="border-t border-[#2a2723]/8 pt-8 mt-2">
