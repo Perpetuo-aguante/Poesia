@@ -15,20 +15,20 @@ const MODES: { id: VisMode; label: string; sub: string }[] = [
 
 export default function ModeSelector({ mode, onChange }: Props) {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-2">
       {MODES.map(m => (
         <button
           key={m.id}
           onClick={() => onChange(m.id)}
           className={`
-            flex flex-col items-start px-4 py-2.5 rounded-lg border text-left transition-all
+            flex flex-col items-start px-4 py-2 rounded-badge border text-left transition-colors font-poppins
             ${mode === m.id
-              ? 'border-[#2a2723]/40 bg-[#2a2723]/[0.06] text-[#2a2723]'
-              : 'border-[#2a2723]/12 bg-transparent text-[#2a2723]/40 hover:text-[#2a2723]/70 hover:border-[#2a2723]/25'}
+              ? 'border-ink bg-ink text-[#f7f7f5]'
+              : 'border-ink/15 bg-transparent text-ink/45 hover:text-ink hover:border-ink/40'}
           `}
         >
-          <span className="text-sm font-medium leading-tight">{m.label}</span>
-          <span className="text-[10px] opacity-60 mt-0.5">{m.sub}</span>
+          <span className="text-caption tracking-[0.05em] uppercase leading-tight">{m.label}</span>
+          <span className="text-[10px] opacity-60 mt-0.5 normal-case">{m.sub}</span>
         </button>
       ))}
     </div>

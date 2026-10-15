@@ -10,17 +10,17 @@ export default function PoemReading({ poem }: Props) {
   const stanzaSizes = poem.stanzas.map(s => s.verses.length);
 
   return (
-    <div className="w-full max-w-[720px] mx-auto flex flex-col gap-8 font-serif text-[#2a2723]">
+    <div className="w-full max-w-[720px] mx-auto flex flex-col gap-8 text-ink">
 
       {/* Type & structure summary */}
-      <div className="flex flex-col gap-1.5 text-center">
-        <p className="text-lg tracking-tight">
+      <div className="flex flex-col gap-2 text-center">
+        <p className="text-subheading font-serif font-normal tracking-tight">
           {poem.form.name}
-          <span className="text-[#2a2723]/40"> · </span>
+          <span className="text-ink/40"> · </span>
           {poem.form.meterName}
           {!poem.form.isRegular && poem.form.name !== 'Verso libre' ? ' irregular' : ''}
         </p>
-        <p className="text-sm text-[#2a2723]/50 font-poppins">
+        <p className="text-caption tracking-[0.05em] text-ink/45 font-poppins uppercase">
           {poem.stanzas.length} {poem.stanzas.length === 1 ? 'estrofa' : 'estrofas'}
           {' · '}
           {stanzaSizes.join('-')} {stanzaSizes.every(n => n === 1) ? 'verso' : 'versos'} por estrofa
@@ -36,12 +36,12 @@ export default function PoemReading({ poem }: Props) {
             {stanza.verses.map(v => (
               <div
                 key={v.verseIndex}
-                className="flex items-baseline gap-3 py-0.5 border-b border-[#2a2723]/[0.06]"
+                className="flex items-baseline gap-3 py-1 border-b border-ink/[0.08]"
               >
-                <span className="flex-1 text-[15px] leading-relaxed italic">
+                <span className="flex-1 text-[15px] leading-relaxed font-serif italic">
                   {v.text}
                 </span>
-                <span className="text-xs text-[#2a2723]/40 font-poppins tabular-nums whitespace-nowrap">
+                <span className="text-caption text-ink/40 font-poppins tabular-nums whitespace-nowrap">
                   {v.syllables} síl.
                 </span>
               </div>

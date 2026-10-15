@@ -225,7 +225,7 @@ function drawBlocks(
   W: number,
   H: number,
 ) {
-  ctx.fillStyle = '#faf8f4';
+  ctx.fillStyle = '#f7f7f5';
   ctx.fillRect(0, 0, W, H);
 
   const PADDING_TOP = H * 0.06;
@@ -241,9 +241,9 @@ function drawBlocks(
     const pulse = (Math.sin(t * (0.4 + contrast * 0.6) + si) + 1) / 2;
     const glowAlpha = 0.03 + pulse * 0.05;
     const grad = ctx.createLinearGradient(gapX - stanzaGap * 0.5, 0, gapX + stanzaGap * 1.5, 0);
-    grad.addColorStop(0, `rgba(13,82,161,0)`);
-    grad.addColorStop(0.5, `rgba(13,82,161,${glowAlpha})`);
-    grad.addColorStop(1, `rgba(13,82,161,0)`);
+    grad.addColorStop(0, `rgba(10,10,10,0)`);
+    grad.addColorStop(0.5, `rgba(10,10,10,${glowAlpha})`);
+    grad.addColorStop(1, `rgba(10,10,10,0)`);
     ctx.fillStyle = grad;
     ctx.fillRect(gapX - stanzaGap, 0, stanzaGap * 3, H);
   }
@@ -255,7 +255,7 @@ function drawBlocks(
     ctx.save();
     ctx.beginPath();
     ctx.setLineDash([4, 8]);
-    ctx.strokeStyle = 'rgba(13,82,161,0.15)';
+    ctx.strokeStyle = 'rgba(10,10,10,0.15)';
     ctx.lineWidth = 0.5;
     ctx.moveTo(0, baselineY);
     ctx.lineTo(W, baselineY);
@@ -270,9 +270,9 @@ function drawBlocks(
 
     if (v.isMetricalAnomaly) {
       const glowGrad = ctx.createLinearGradient(x, 0, x + slotWidth, 0);
-      glowGrad.addColorStop(0, 'rgba(13,82,161,0)');
+      glowGrad.addColorStop(0, 'rgba(10,10,10,0)');
       glowGrad.addColorStop(0.5, rgba(v.fieldColor, 0.06));
-      glowGrad.addColorStop(1, 'rgba(13,82,161,0)');
+      glowGrad.addColorStop(1, 'rgba(10,10,10,0)');
       ctx.fillStyle = glowGrad;
       ctx.fillRect(x, PADDING_TOP, slotWidth, availH * 0.9);
     }
@@ -334,7 +334,7 @@ function drawPergamino(
   W: number,
   H: number,
 ) {
-  ctx.fillStyle = '#F2EDE3';
+  ctx.fillStyle = '#f0efec';
   ctx.fillRect(0, 0, W, H);
 
   const PADDING_TOP = H * 0.06;
@@ -456,7 +456,7 @@ function drawSerigrafia(
   W: number,
   H: number,
 ) {
-  ctx.fillStyle = '#faf8f4';
+  ctx.fillStyle = '#f7f7f5';
   ctx.fillRect(0, 0, W, H);
 
   const PADDING_TOP = H * 0.06;
@@ -473,7 +473,7 @@ function drawSerigrafia(
     ctx.save();
     ctx.beginPath();
     ctx.setLineDash([]);
-    ctx.strokeStyle = 'rgba(13,82,161,0.15)';
+    ctx.strokeStyle = 'rgba(10,10,10,0.15)';
     ctx.lineWidth = 0.5;
     ctx.moveTo(0, baselineY);
     ctx.lineTo(W, baselineY);
@@ -536,7 +536,7 @@ function drawSerigrafia(
     const verses = poem.stanzas.slice(0, si + 1).flatMap(s => s.verses);
     const gapX = verses.length * (layout[0]?.slotWidth || 20) + si * stanzaGap + stanzaGap * 0.5;
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(13,82,161,0.12)';
+    ctx.strokeStyle = 'rgba(10,10,10,0.12)';
     ctx.lineWidth = 0.5;
     ctx.moveTo(gapX, PADDING_TOP * 0.5);
     ctx.lineTo(gapX, H - PADDING_BOT * 0.5);

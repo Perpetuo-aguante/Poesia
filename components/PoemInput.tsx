@@ -108,8 +108,8 @@ export default function PoemInput({ onSubmit, onCancel, initialValue = '', autoF
         placeholder="Escribe o pega tu poema aquí…"
         rows={12}
         autoFocus={autoFocus}
-        className="w-full bg-white border border-[#2a2723]/12 focus:border-[#2a2723]/30 text-[#2a2723] placeholder:text-[#2a2723]/25
-                   text-[15px] leading-relaxed font-serif rounded-md px-5 py-4 resize-none outline-none
+        className="w-full bg-transparent border border-ink/15 focus:border-ink/40 text-ink placeholder:text-ink/25
+                   text-[15px] leading-relaxed font-serif px-5 py-4 resize-none outline-none
                    transition-colors"
       />
 
@@ -118,16 +118,16 @@ export default function PoemInput({ onSubmit, onCancel, initialValue = '', autoF
         <button
           onClick={handleSubmit}
           disabled={!text.trim()}
-          className="px-5 py-2 bg-[#2a2723] text-[#faf8f4] text-sm font-medium rounded-full
-                     hover:bg-[#1a1815] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className="px-5 py-2 border border-ink text-ink text-caption tracking-[0.1em] uppercase font-poppins rounded-badge
+                     hover:bg-ink hover:text-[#f7f7f5] transition-colors disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-ink"
         >
           visualizar poema
         </button>
 
         <button
           onClick={() => fileRef.current?.click()}
-          className="px-4 py-2 border border-[#2a2723]/15 text-[#2a2723]/55 hover:text-[#2a2723]/80 hover:border-[#2a2723]/30
-                     text-sm rounded-full transition-colors"
+          className="px-4 py-2 border border-ink/20 text-ink/55 hover:text-ink hover:border-ink/50
+                     text-caption tracking-[0.1em] uppercase rounded-badge transition-colors font-poppins"
         >
           subir .txt
         </button>
@@ -135,7 +135,7 @@ export default function PoemInput({ onSubmit, onCancel, initialValue = '', autoF
         {onCancel && (
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-[#2a2723]/40 hover:text-[#2a2723]/70 text-sm transition-colors"
+            className="px-4 py-2 text-ink/40 hover:text-ink/70 text-caption tracking-[0.1em] uppercase transition-colors font-poppins"
           >
             cancelar
           </button>
@@ -152,12 +152,12 @@ export default function PoemInput({ onSubmit, onCancel, initialValue = '', autoF
 
       {/* Sample poems */}
       <div className="flex flex-wrap gap-2 pt-1">
-        <span className="text-xs text-[#2a2723]/30 self-center font-poppins mr-1">ejemplos:</span>
+        <span className="text-caption text-ink/30 self-center font-poppins tracking-[0.1em] uppercase mr-1">ejemplos:</span>
         {SAMPLE_POEMS.map(p => (
           <button
             key={p.label}
             onClick={() => handleSample(p)}
-            className="text-xs text-[#2a2723]/45 hover:text-[#2a2723]/75 border border-[#2a2723]/12 hover:border-[#2a2723]/25 px-2.5 py-1 rounded-full transition-colors font-poppins"
+            className="text-caption text-ink/45 hover:text-ink/80 border border-ink/12 hover:border-ink/35 px-2.5 py-1 rounded-badge transition-colors font-poppins"
           >
             {p.label}
           </button>

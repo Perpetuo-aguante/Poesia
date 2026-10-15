@@ -35,7 +35,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${poppins.variable} ${sourceSerif.variable}`}>
-      <body className={`min-h-screen bg-[#faf8f4] ${poppins.className}`}>{children}</body>
+      <body className={`min-h-screen bg-[#f7f7f5] ${poppins.className} font-normal`}>{children}</body>
     </html>
   );
 }
