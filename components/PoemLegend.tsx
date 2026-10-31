@@ -60,7 +60,7 @@ export default function PoemLegend({ poem, visible, onToggle }: Props) {
     <div className="flex flex-col gap-2">
       <button
         onClick={onToggle}
-        className="text-xs text-[#2a2723]/35 hover:text-[#2a2723]/60 transition-colors text-left"
+        className="text-caption text-ink/35 hover:text-ink/60 transition-colors text-left"
       >
         {visible ? '▼ leyenda' : '▶ leyenda'}
       </button>
@@ -76,32 +76,32 @@ export default function PoemLegend({ poem, visible, onToggle }: Props) {
                   className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
                   style={{ backgroundColor: FIELD_COLORS_CSS[field] }}
                 />
-                <span className="text-[11px] text-[#2a2723]/55">
+                <span className="text-[11px] text-ink/55">
                   {FIELD_LABELS[field]}
-                  <span className="text-[#2a2723]/30 ml-1">
+                  <span className="text-ink/30 ml-1">
                     {Math.round((count / total) * 100)}%
                   </span>
                 </span>
               </div>
             ))}
 
-            <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-[#2a2723]/10">
-              <span className="text-[11px] text-[#2a2723]/35">
+            <div className="flex items-center gap-1.5 ml-2 pl-2 border-l border-ink/10">
+              <span className="text-[11px] text-ink/35">
                 {total} versos · {poem.stanzas.length} estrofas · ~{Math.round(poem.avgSyllables)} síl./verso
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5 pl-2 border-l border-[#2a2723]/10">
-              <span className="text-[11px] text-[#2a2723]/60 font-medium">
+            <div className="flex items-center gap-1.5 pl-2 border-l border-ink/10">
+              <span className="text-[11px] text-ink/70 uppercase tracking-[0.05em]">
                 {poem.form.name}
               </span>
-              <span className="text-[#2a2723]/20 text-[11px]">·</span>
-              <span className="text-[11px] text-[#2a2723]/40">
+              <span className="text-ink/20 text-[11px]">·</span>
+              <span className="text-[11px] text-ink/40">
                 {poem.form.meterName}
                 {!poem.form.isRegular && poem.form.name !== 'Verso libre' ? ' (irregular)' : ''}
               </span>
-              <span className="text-[#2a2723]/20 text-[11px]">·</span>
-              <span className="text-[11px] text-[#2a2723]/25">
+              <span className="text-ink/20 text-[11px]">·</span>
+              <span className="text-[11px] text-ink/25">
                 {poem.form.regularPercent}% regular
               </span>
             </div>
@@ -109,8 +109,8 @@ export default function PoemLegend({ poem, visible, onToggle }: Props) {
 
           {/* Rhyme groups row */}
           {hasRhymes && (
-            <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-1 border-t border-[#2a2723]/08">
-              <span className="text-[11px] text-[#2a2723]/30 self-center">rima:</span>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-1 border-t border-ink/08">
+              <span className="text-[11px] text-ink/30 self-center">rima:</span>
               {poem.rhymeGroups.map(group => (
                 <div key={group.groupIndex} className="flex items-center gap-1.5">
                   <span
@@ -119,12 +119,12 @@ export default function PoemLegend({ poem, visible, onToggle }: Props) {
                       backgroundColor: `rgb(${group.color.r},${group.color.g},${group.color.b})`,
                     }}
                   />
-                  <span className="text-[11px] text-[#2a2723]/50">
+                  <span className="text-[11px] text-ink/50">
                     <span className="font-mono">-{group.signature}</span>
-                    <span className="text-[#2a2723]/25 ml-1 text-[10px]">
+                    <span className="text-ink/25 ml-1 text-[10px]">
                       ({group.type === 'consonante' ? 'cons.' : 'ason.'})
                     </span>
-                    <span className="text-[#2a2723]/25 ml-1 text-[10px]">
+                    <span className="text-ink/25 ml-1 text-[10px]">
                       ×{group.verseIndices.length}
                     </span>
                   </span>
