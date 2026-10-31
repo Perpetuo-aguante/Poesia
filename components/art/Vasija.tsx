@@ -3,13 +3,16 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { INK, mix, rng } from '@/lib/fingerprint';
+import { FieldColor } from '@/lib/poemParser';
 import { ArtProps } from './types';
 
 // Particles define a vessel by turning around its emptiness. The poem is
 // wound along the spiral from base to rim: each particle belongs to a verse
 // and a syllable, so the whole poem is literally inside the vessel.
 
-export default function Vasija({ fingerprint: fp, width, height }: ArtProps) {
+const MAX_LIT = 128; // verses that can be lit individually on the stage
+
+export default function Vasija({ fingerprint: fp, width, height, stage }: ArtProps) {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -19,12 +22,18 @@ export default function Vasija({ fingerprint: fp, width, height }: ArtProps) {
     const count = Math.min(45000, 18000 + fp.verseCount * 1500);
     const random = rng(fp.seed);
 
+    // Stage presentation: themed ink, re-toned colours, transparent ground.
+    const ink = stage?.theme.ink ?? INK;
+    const tone = stage?.theme.tone ?? ((c: FieldColor) => c);
+    const lit = new Float32Array(MAX_LIT).fill(1);
+
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#faf8f4');
+    if (!stage) scene.background = new THREE.Color('#faf8f4');
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     camera.position.z = 5;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: !!stage, powerPreference: 'high-performance' });
+    if (stage) renderer.setClearColor(0x000000, 0);
     const pixelRatio = Math.min(window.devicePixelRatio, 2);
     renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height);
@@ -40,6 +49,7 @@ export default function Vasija({ fingerprint: fp, width, height }: ArtProps) {
         breathAmp: { value: 0.06 + fp.enjambment * 0.1 },
         fray: { value: (1 - fp.meterRegularity) * 0.18 },
         scale: { value: Math.min(2.75, 2.75 * (width / height) * 0.75) },
+        lit: { value: lit },
       },
       vertexShader: `
         uniform float time;
@@ -51,11 +61,15 @@ export default function Vasija({ fingerprint: fp, width, height }: ArtProps) {
         uniform float scale;
         attribute float size;
         attribute float jitter;
+        uniform float lit[${MAX_LIT}];
         attribute vec3 customColor;
+        attribute float verse;
         varying vec3 vColor;
+        varying float vLit;
 
         void main() {
           vColor = customColor;
+          vLit = lit[int(verse)];
           vec3 pos = position;
           float radius = length(pos.xz);
           float angle = atan(pos.z, pos.x);
@@ -77,11 +91,12 @@ export default function Vasija({ fingerprint: fp, width, height }: ArtProps) {
       fragmentShader: `
         uniform float opacity;
         varying vec3 vColor;
+        varying float vLit;
         void main() {
           vec2 c = gl_PointCoord - vec2(0.5);
           float d = dot(c, c);
           if (d > 0.25) discard;
-          gl_FragColor = vec4(vColor, (1.0 - smoothstep(0.2025, 0.25, d)) * opacity);
+          gl_FragColor = vec4(vColor, (1.0 - smoothstep(0.2025, 0.25, d)) * opacity * vLit);
         }
       `,
       transparent: true,
@@ -100,6 +115,7 @@ export default function Vasija({ fingerprint: fp, width, height }: ArtProps) {
     const colors = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
     const jitters = new Float32Array(count);
+    const verseIdx = new Float32Array(count);
     const turns = 40 + fp.verseCount * 2;
 
     for (let i = 0; i < count; i++) {
@@ -121,7 +137,8 @@ export default function Vasija({ fingerprint: fp, width, height }: ArtProps) {
       positions[i * 3 + 1] = h;
       positions[i * 3 + 2] = Math.sin(angle) * radius;
 
-      const tint = mix(INK, verse.color, (stressed ? 0.75 : 0.35) + fp.warmth * 0.15);
+      verseIdx[i] = Math.min(MAX_LIT - 1, vi);
+      const tint = mix(ink, tone(verse.color), (stressed ? 0.75 : 0.35) + fp.warmth * 0.15);
       const shade = 0.85 + random() * 0.15;
       colors[i * 3] = (tint.r / 255) * shade;
       colors[i * 3 + 1] = (tint.g / 255) * shade;
@@ -136,21 +153,35 @@ export default function Vasija({ fingerprint: fp, width, height }: ArtProps) {
     geometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
     geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
     geometry.setAttribute('jitter', new THREE.BufferAttribute(jitters, 1));
+    geometry.setAttribute('verse', new THREE.BufferAttribute(verseIdx, 1));
     const points = new THREE.Points(geometry, material);
     scene.add(points);
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const clock = new THREE.Clock();
     let raf = 0;
-    const animate = () => {
-      material.uniforms.time.value = reduced ? 8 : clock.getElapsedTime();
-      renderer.render(scene, camera);
-      if (!reduced) raf = requestAnimationFrame(animate);
-    };
-    animate();
+    let unsubscribe: (() => void) | null = null;
+    if (stage) {
+      // The shared stage ticker drives time and per-verse light.
+      const n = Math.min(MAX_LIT, fp.verseCount);
+      unsubscribe = stage.subscribe(60, () => {
+        if (!stage.visible()) return;
+        for (let i = 0; i < n; i++) lit[i] = stage.lit[i] ?? 1;
+        material.uniforms.time.value = stage.time() - 4;
+        renderer.render(scene, camera);
+      });
+    } else {
+      const animate = () => {
+        material.uniforms.time.value = reduced ? 8 : clock.getElapsedTime();
+        renderer.render(scene, camera);
+        if (!reduced) raf = requestAnimationFrame(animate);
+      };
+      animate();
+    }
 
     return () => {
       cancelAnimationFrame(raf);
+      unsubscribe?.();
       scene.remove(points);
       geometry.dispose();
       material.dispose();
@@ -158,7 +189,7 @@ export default function Vasija({ fingerprint: fp, width, height }: ArtProps) {
       renderer.forceContextLoss();
       if (renderer.domElement.parentNode === container) container.removeChild(renderer.domElement);
     };
-  }, [fp, width, height]);
+  }, [fp, width, height, stage]);
 
   return <div ref={mountRef} style={{ width, height }} />;
 }

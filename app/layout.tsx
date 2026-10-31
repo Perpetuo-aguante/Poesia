@@ -1,21 +1,26 @@
 import type { Metadata } from 'next';
-import { Poppins, Source_Serif_4 } from 'next/font/google';
+// Self-hosted type for the Cauce system (latin subset, woff2, font-display: swap).
+// Browsers only download the faces the active tokens use.
+import '@fontsource/fraunces/latin-900.css';
+import '@fontsource/newsreader/latin-400.css';
+import '@fontsource/newsreader/latin-400-italic.css';
+import '@fontsource/dm-mono/latin-400.css';
+import '@fontsource/playfair-display/latin-900-italic.css';
+import '@fontsource/source-serif-4/latin-400.css';
+import '@fontsource/source-serif-4/latin-400-italic.css';
+import '@fontsource/ibm-plex-mono/latin-400.css';
+import '@fontsource/bodoni-moda/latin-900.css';
+import '@fontsource/eb-garamond/latin-400.css';
+import '@fontsource/eb-garamond/latin-400-italic.css';
+import '@fontsource/space-mono/latin-400.css';
+import '@fontsource/dm-serif-display/latin-400.css';
+import '@fontsource/literata/latin-400.css';
+import '@fontsource/literata/latin-400-italic.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
+import '@fontsource/instrument-serif/latin-400.css';
+import '@fontsource/syne/latin-800.css';
 import './globals.css';
-
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
-  variable: '--font-poppins',
-  display: 'swap',
-});
-
-const sourceSerif = Source_Serif_4({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  style: ['normal', 'italic'],
-  variable: '--font-serif',
-  display: 'swap',
-});
+import './cauce.css';
 
 export const metadata: Metadata = {
   title: 'Geometría Poética',
@@ -34,8 +39,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${poppins.variable} ${sourceSerif.variable}`}>
-      <body className={`min-h-screen bg-[#f7f7f5] ${poppins.className} font-normal`}>{children}</body>
+    <html lang="es">
+      <body>{children}</body>
     </html>
   );
 }

@@ -1,8 +1,11 @@
 'use client';
 
 import { RefObject, useEffect, useRef } from 'react';
+import { ArtStage } from './types';
 
-export type DrawFn = (ctx: CanvasRenderingContext2D, t: number, w: number, h: number, frame: number) => void;
+// `rate` scales per-frame motion (1 = normal, 0 = frozen); pieces that only
+// read `t` can ignore it.
+export type DrawFn = (ctx: CanvasRenderingContext2D, t: number, w: number, h: number, frame: number, rate?: number) => void;
 
 // Runs `draw` every animation frame on a HiDPI-aware 2D canvas.
 // `setup` runs once per (re)start and returns the per-frame draw function,
@@ -16,6 +19,8 @@ export function useCanvasLoop(
   setup: (ctx: CanvasRenderingContext2D, w: number, h: number) => DrawFn,
   deps: unknown[],
   settleFrames = 1,
+  stage?: ArtStage,
+  fps = 60,
 ) {
   const setupRef = useRef(setup);
   setupRef.current = setup;
@@ -34,6 +39,16 @@ export function useCanvasLoop(
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const draw = setupRef.current(ctx, width, height);
+
+    // On the Cauce stage the shared ticker drives the frame and the clock.
+    if (stage) {
+      let frame = 0;
+      for (let f = 0; f < Math.min(settleFrames, 90); f++) draw(ctx, stage.time(), width, height, frame++, 1);
+      return stage.subscribe(fps, () => {
+        if (stage.visible()) draw(ctx, stage.time(), width, height, frame++, stage.rate());
+      });
+    }
+
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced) {
       for (let f = 0; f < settleFrames; f++) draw(ctx, 12 + f / 60, width, height, f);
@@ -50,5 +65,5 @@ export function useCanvasLoop(
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canvasRef, width, height, ...deps]);
+  }, [canvasRef, width, height, stage, fps, ...deps]);
 }
