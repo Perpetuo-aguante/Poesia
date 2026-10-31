@@ -9,7 +9,12 @@ ENV RANTANPLAN_MODEL=es_core_news_sm \
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir setuptools wheel "spacy==2.2.4" "spacy-affixes==0.1.4" \
+# spaCy's compiled dependencies are pinned in requirements.txt to versions with
+# prebuilt wheels, so no compiler is needed. spaCy must be installed before
+# rantanplan, whose setup.py imports it.
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir "cymem==2.0.8" "murmurhash==1.0.10" "preshed==3.0.9" \
+         "spacy==2.2.4" "spacy-affixes==0.1.4" \
     && pip install --no-cache-dir --no-build-isolation -r requirements.txt \
     && python -m spacy download es_core_news_sm \
     && if [ "$FULL" = "1" ]; then \

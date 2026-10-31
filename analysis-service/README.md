@@ -67,13 +67,22 @@ Hugging Face Spaces ya solo permite Spaces estáticos en el plan gratuito
 Render sí tiene un plan gratuito con Docker (512 MB de RAM):
 
 1. Entra a [render.com](https://render.com) con tu cuenta de GitHub.
-2. **New → Blueprint** y elige este repositorio. Render lee `render.yaml`
-   (en la raíz) y crea el servicio `perpetuo-rantanplan` en el plan Free.
-3. Cuando termine el primer deploy, copia la URL del servicio
+2. **New → Web Service** → elige el repositorio `Perpetuo-aguante/Poesia`.
+3. Configura:
+   - **Branch**: `main` (o la rama del PR si aún no está fusionado)
+   - **Root Directory**: `analysis-service`
+   - **Language / Runtime**: `Docker` (Render lo detecta por el `Dockerfile`)
+   - **Instance Type**: `Free`
+   - En *Advanced*, **Health Check Path**: `/health`
+   - No hace falta ninguna variable de entorno.
+4. Cuando termine el primer deploy, copia la URL del servicio
    (algo como `https://perpetuo-rantanplan.onrender.com`). Puedes comprobarla
    abriendo `…/health`, que debe responder `{"ok":true}`.
-4. En Vercel → el proyecto → **Settings → Environment Variables**, agrega
+5. En Vercel → el proyecto → **Settings → Environment Variables**, agrega
    `RANTANPLAN_URL` con esa URL (sin `/scan` al final) y vuelve a desplegar.
+
+(El `render.yaml` de la raíz describe lo mismo para quien use Blueprints;
+no es necesario para el paso manual.)
 
 El plan gratuito duerme el servicio tras 15 minutos sin visitas; despertar
 tarda alrededor de un minuto. La app hace un «ping» al servicio en cuanto se

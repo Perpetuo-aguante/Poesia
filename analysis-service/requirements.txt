@@ -1,5 +1,10 @@
 # Rantanplan fija spaCy 2.2.4, que solo funciona hasta Python 3.8.
 spacy==2.2.4
+# Newer releases of these spaCy dependencies have no prebuilt wheels for
+# Python 3.8 and would need a C compiler; these versions do.
+cymem==2.0.8
+murmurhash==1.0.10
+preshed==3.0.9
 spacy-affixes==0.1.4
 rantanplan==0.7.1
 fastapi==0.110.3
