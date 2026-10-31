@@ -2,14 +2,18 @@
 
 import { useRef } from 'react';
 import { INK, PAPER, css, mix, rng } from '@/lib/fingerprint';
+import { FieldColor } from '@/lib/poemParser';
 import { ArtProps } from './types';
 import { useCanvasLoop } from './useCanvasLoop';
 
 // A flow field where every rhyme is a whirlpool. Particles carry the colour
 // of the verse they belong to and leave trails as long as the poem is still.
 
-export default function Corriente({ fingerprint: fp, width, height }: ArtProps) {
+export default function Corriente({ fingerprint: fp, width, height, stage }: ArtProps) {
   const ref = useRef<HTMLCanvasElement>(null);
+  // Stage presentation: themed ink, re-toned colours, per-verse light.
+  const ink = stage?.theme.ink ?? INK;
+  const tone = stage?.theme.tone ?? ((c: FieldColor) => c);
 
   useCanvasLoop(ref, width, height, (ctx, w, h) => {
     const random = rng(fp.seed);
@@ -35,16 +39,23 @@ export default function Corriente({ fingerprint: fp, width, height }: ArtProps) 
       y: random() * h,
       life: Math.floor(random() * 240),
       trail: [] as number[],
-      color: css(mix(INK, fp.verses[i % Math.max(1, fp.verseCount)]?.color ?? fp.palette[0], 0.75), 0.5),
+      verse: i % Math.max(1, fp.verseCount),
+      color: css(mix(ink, tone(fp.verses[i % Math.max(1, fp.verseCount)]?.color ?? fp.palette[0]), 0.75), 0.5),
     }));
 
-    return (c, t) => {
-      c.fillStyle = css(PAPER);
-      c.fillRect(0, 0, w, h);
+    return (c, t, _w, _h, _f, rate = 1) => {
+      if (stage) c.clearRect(0, 0, w, h);
+      else {
+        c.fillStyle = css(PAPER);
+        c.fillRect(0, 0, w, h);
+      }
       c.lineWidth = 1.2;
       c.lineCap = 'round';
 
       for (const p of particles) {
+        if (stage) c.globalAlpha = stage.lit[p.verse] ?? 1;
+        // A frozen clock (Still motion) keeps the trails exactly where they are.
+        if (rate > 0) {
         let a =
           Math.sin(p.x * freq + phase[0] + t * 0.05) * 2 +
           Math.cos(p.y * freq * 1.3 + phase[1]) * 2 +
@@ -60,8 +71,8 @@ export default function Corriente({ fingerprint: fp, width, height }: ArtProps) 
           vy += (dx / Math.sqrt(d2 + 1)) * pull * 2 - (dy / Math.sqrt(d2 + 1)) * Math.abs(pull) * 0.3;
         }
         a = Math.atan2(vy, vx);
-        const nx = p.x + Math.cos(a) * speed;
-        const ny = p.y + Math.sin(a) * speed;
+        const nx = p.x + Math.cos(a) * speed * rate;
+        const ny = p.y + Math.sin(a) * speed * rate;
 
         p.x = nx;
         p.y = ny;
@@ -79,6 +90,7 @@ export default function Corriente({ fingerprint: fp, width, height }: ArtProps) 
         }
         p.trail.push(p.x, p.y);
         if (p.trail.length > trailLength * 2) p.trail.splice(0, 2);
+        }
 
         if (p.trail.length >= 4) {
           c.strokeStyle = p.color;
@@ -88,8 +100,9 @@ export default function Corriente({ fingerprint: fp, width, height }: ArtProps) 
           c.stroke();
         }
       }
+      c.globalAlpha = 1;
     };
-  }, [fp], 300);
+  }, [fp], 300, stage, 60);
 
   return <canvas ref={ref} aria-hidden />;
 }

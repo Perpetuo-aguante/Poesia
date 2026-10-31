@@ -100,44 +100,31 @@ export default function PoemInput({ onSubmit, onCancel, initialValue = '', autoF
   };
 
   return (
-    <div className="w-full flex flex-col gap-4">
+    <div className="pi">
       {/* Text area */}
       <textarea
         value={text}
         onChange={e => setText(e.target.value)}
-        placeholder="Escribe o pega tu poema aquí…"
+        placeholder="Escribe o pega tu poema aquí. Deja una línea en blanco entre estrofas."
+        aria-label="Texto del poema"
         rows={12}
         autoFocus={autoFocus}
-        className="w-full bg-transparent border border-ink/15 focus:border-ink/40 text-ink placeholder:text-ink/25
-                   text-[15px] leading-relaxed font-serif px-5 py-4 resize-none outline-none
-                   transition-colors"
+        className="pi-text"
       />
 
       {/* Actions */}
-      <div className="flex items-center flex-wrap gap-3">
-        <button
-          onClick={handleSubmit}
-          disabled={!text.trim()}
-          className="px-5 py-2 border border-ink text-ink text-caption tracking-[0.1em] uppercase font-poppins rounded-badge
-                     hover:bg-ink hover:text-[#f7f7f5] transition-colors disabled:opacity-25 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-ink"
-        >
-          visualizar poema
+      <div className="pi-actions">
+        <button onClick={handleSubmit} disabled={!text.trim()} className="pill-btn">
+          Visualizar poema
         </button>
 
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="px-4 py-2 border border-ink/20 text-ink/55 hover:text-ink hover:border-ink/50
-                     text-caption tracking-[0.1em] uppercase rounded-badge transition-colors font-poppins"
-        >
-          subir .txt
+        <button onClick={() => fileRef.current?.click()} className="pill-btn ghost">
+          Subir .txt
         </button>
 
         {onCancel && (
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-ink/40 hover:text-ink/70 text-caption tracking-[0.1em] uppercase transition-colors font-poppins"
-          >
-            cancelar
+          <button onClick={onCancel} className="pill-btn quiet">
+            Cancelar
           </button>
         )}
 
@@ -151,14 +138,10 @@ export default function PoemInput({ onSubmit, onCancel, initialValue = '', autoF
       </div>
 
       {/* Sample poems */}
-      <div className="flex flex-wrap gap-2 pt-1">
-        <span className="text-caption text-ink/30 self-center font-poppins tracking-[0.1em] uppercase mr-1">ejemplos:</span>
+      <div className="pi-samples">
+        <span className="pi-samples-label">Ejemplos:</span>
         {SAMPLE_POEMS.map(p => (
-          <button
-            key={p.label}
-            onClick={() => handleSample(p)}
-            className="text-caption text-ink/45 hover:text-ink/80 border border-ink/12 hover:border-ink/35 px-2.5 py-1 rounded-badge transition-colors font-poppins"
-          >
+          <button key={p.label} onClick={() => handleSample(p)} className="chip-btn">
             {p.label}
           </button>
         ))}

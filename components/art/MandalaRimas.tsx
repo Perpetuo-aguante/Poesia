@@ -2,19 +2,24 @@
 
 import { useRef } from 'react';
 import { INK, PAPER, css } from '@/lib/fingerprint';
+import { FieldColor } from '@/lib/poemParser';
 import { ArtProps } from './types';
 import { useCanvasLoop } from './useCanvasLoop';
 
 // The poem as a rose window: every verse is a spoke, every syllable a bead,
 // and rhymes are threads stretched across the centre.
 
-export default function MandalaRimas({ fingerprint: fp, width, height }: ArtProps) {
+export default function MandalaRimas({ fingerprint: fp, width, height, stage }: ArtProps) {
   const ref = useRef<HTMLCanvasElement>(null);
+  // Stage presentation: themed ink, re-toned colours, per-verse light.
+  const ink = stage?.theme.ink ?? INK;
+  const tone = stage?.theme.tone ?? ((c: FieldColor) => c);
+  const lit = (i: number) => (stage ? stage.lit[i] ?? 1 : 1);
 
   useCanvasLoop(ref, width, height, (_ctx, w, h) => {
     const cx = w / 2;
     const cy = h / 2;
-    const R = Math.min(w, h) * 0.45;
+    const R = Math.min(w, h) * 0.45 * (stage ? 1.22 : 1); // bleed past the edges on the stage
     const n = Math.max(1, fp.verseCount);
     const r0 = R * 0.2;
     const spin = 0.015 + fp.turbulence * 0.06;
@@ -26,8 +31,11 @@ export default function MandalaRimas({ fingerprint: fp, width, height }: ArtProp
     });
 
     return (ctx, t) => {
-      ctx.fillStyle = css(PAPER);
-      ctx.fillRect(0, 0, w, h);
+      if (stage) ctx.clearRect(0, 0, w, h);
+      else {
+        ctx.fillStyle = css(PAPER);
+        ctx.fillRect(0, 0, w, h);
+      }
       const rot = -Math.PI / 2 + t * spin;
       const angleOf = (i: number) => rot + (i / n) * Math.PI * 2;
       const tip = (i: number) => {
@@ -39,7 +47,7 @@ export default function MandalaRimas({ fingerprint: fp, width, height }: ArtProp
       // Stanza arcs
       let start = 0;
       ctx.lineWidth = 1;
-      ctx.strokeStyle = css(INK, 0.22);
+      ctx.strokeStyle = css(ink, 0.22);
       for (const size of fp.stanzaSizes) {
         const a0 = angleOf(start) - 0.3 / n;
         const a1 = angleOf(start + size - 1) + 0.3 / n;
@@ -51,10 +59,10 @@ export default function MandalaRimas({ fingerprint: fp, width, height }: ArtProp
 
       // Rhyme threads
       for (const [g, idx] of Array.from(groups)) {
-        const color = fp.rhymeColors[g] ?? INK;
-        ctx.strokeStyle = css(color, 0.35 + 0.2 * Math.sin(t * 0.8 + g));
+        const color = tone(fp.rhymeColors[g] ?? INK);
         ctx.lineWidth = 1.2;
         for (let k = 0; k < idx.length - 1; k++) {
+          ctx.strokeStyle = css(color, (0.35 + 0.2 * Math.sin(t * 0.8 + g)) * Math.max(lit(idx[k]), lit(idx[k + 1])));
           const [x1, y1] = tip(idx[k]);
           const [x2, y2] = tip(idx[k + 1]);
           ctx.beginPath();
@@ -72,7 +80,9 @@ export default function MandalaRimas({ fingerprint: fp, width, height }: ArtProp
         const len = (R - r0) * v.normalized;
         const syl = Math.max(1, v.stress.length);
 
-        ctx.strokeStyle = css(INK, v.anomaly ? 0.35 : 0.12);
+        const L = lit(i);
+        const vc = tone(v.color);
+        ctx.strokeStyle = css(ink, (v.anomaly ? 0.35 : 0.12) * L);
         ctx.setLineDash(v.enjambed ? [2, 3] : []);
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -86,7 +96,7 @@ export default function MandalaRimas({ fingerprint: fp, width, height }: ArtProp
           const r = r0 + (len * (s + 0.5)) / syl;
           const glow = Math.max(0, 1 - Math.abs(pulse - s));
           const stressed = v.stress[s];
-          ctx.fillStyle = stressed ? css(v.color, 0.8 + glow * 0.2) : css(INK, 0.3 + glow * 0.4);
+          ctx.fillStyle = stressed ? css(vc, (0.8 + glow * 0.2) * L) : css(ink, (0.3 + glow * 0.4) * L);
           ctx.beginPath();
           ctx.arc(cx + cos * r, cy + sin * r, (stressed ? 3.4 : 1.4) + glow * 1.6, 0, Math.PI * 2);
           ctx.fill();
@@ -94,12 +104,12 @@ export default function MandalaRimas({ fingerprint: fp, width, height }: ArtProp
       });
 
       // Core
-      ctx.fillStyle = css(fp.palette[0], 0.12);
+      ctx.fillStyle = css(tone(fp.palette[0]), 0.12);
       ctx.beginPath();
       ctx.arc(cx, cy, r0 * 0.45 * (1 + 0.06 * Math.sin(t * 0.9)), 0, Math.PI * 2);
       ctx.fill();
     };
-  }, [fp]);
+  }, [fp], 1, stage, 60);
 
   return <canvas ref={ref} aria-hidden />;
 }

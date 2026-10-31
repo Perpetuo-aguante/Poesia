@@ -2,14 +2,18 @@
 
 import { useRef } from 'react';
 import { INK, PAPER, css, mix, rng } from '@/lib/fingerprint';
+import { FieldColor } from '@/lib/poemParser';
 import { ArtProps } from './types';
 import { useCanvasLoop } from './useCanvasLoop';
 
 // Each verse becomes a mountain ridge whose peaks are its stressed syllables.
 // Read top to bottom, the poem is a range seen from far away.
 
-export default function Cordillera({ fingerprint: fp, width, height }: ArtProps) {
+export default function Cordillera({ fingerprint: fp, width, height, stage }: ArtProps) {
   const ref = useRef<HTMLCanvasElement>(null);
+  // Stage presentation: themed ink, re-toned colours, per-verse light.
+  const ink = stage?.theme.ink ?? INK;
+  const tone = stage?.theme.tone ?? ((c: FieldColor) => c);
 
   useCanvasLoop(ref, width, height, (_ctx, w, h) => {
     const n = Math.max(1, fp.verseCount);
@@ -31,13 +35,16 @@ export default function Cordillera({ fingerprint: fp, width, height }: ArtProps)
         v,
         y: top + (i + stanzaOffset) * step,
         phases: [random() * 6.28, random() * 6.28, random() * 6.28],
-        stroke: mix(INK, v.color, 0.55),
+        stroke: mix(ink, tone(v.color), 0.55),
       };
     });
 
     return (ctx, t) => {
-      ctx.fillStyle = css(PAPER);
-      ctx.fillRect(0, 0, w, h);
+      if (stage) ctx.clearRect(0, 0, w, h);
+      else {
+        ctx.fillStyle = css(PAPER);
+        ctx.fillRect(0, 0, w, h);
+      }
 
       ridges.forEach(({ v, y, phases, stroke }, i) => {
         const syl = Math.max(1, v.stress.length);
@@ -74,17 +81,25 @@ export default function Cordillera({ fingerprint: fp, width, height }: ArtProps)
         ctx.lineTo(w, h);
         ctx.lineTo(0, h);
         ctx.closePath();
-        ctx.fillStyle = css(PAPER);
-        ctx.fill();
+        // On the stage the layer is transparent: erase instead of painting paper.
+        if (stage) {
+          ctx.globalCompositeOperation = 'destination-out';
+          ctx.fillStyle = '#000';
+          ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+        } else {
+          ctx.fillStyle = css(PAPER);
+          ctx.fill();
+        }
 
         ctx.beginPath();
         trace();
-        ctx.strokeStyle = css(stroke, 0.9);
+        ctx.strokeStyle = css(stroke, 0.9 * (stage ? stage.lit[i] ?? 1 : 1));
         ctx.lineWidth = v.anomaly ? 2 : 1.1;
         ctx.stroke();
       });
     };
-  }, [fp]);
+  }, [fp], 1, stage, 30);
 
   return <canvas ref={ref} aria-hidden />;
 }
