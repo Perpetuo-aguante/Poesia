@@ -1,0 +1,12 @@
+# Render Blueprint for the Rantanplan scansion service (free plan).
+# Render → New → Blueprint → pick this repo. Then copy the service URL into
+# Vercel as RANTANPLAN_URL.
+services:
+  - type: web
+    name: perpetuo-rantanplan
+    runtime: docker
+    plan: free
+    dockerfilePath: ./analysis-service/Dockerfile
+    dockerContext: ./analysis-service
+    healthCheckPath: /health
+    autoDeploy: true

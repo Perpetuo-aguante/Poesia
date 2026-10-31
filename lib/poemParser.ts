@@ -84,6 +84,7 @@ export interface ParsedVerse {
   verseIndex: number;             // global (across all stanzas)
   syntagmas: ParsedSyntagma[];    // rhythmic sub-groups within this verse
   rhymeGroupIndex: number;        // index into poem.rhymeGroups, or -1
+  stress: string;                 // stress pattern, one char per metrical syllable: '+' stressed, '-' unstressed
 }
 
 export interface ParsedStanza {
@@ -104,6 +105,7 @@ export interface ParsedPoem {
   language: 'es' | 'en' | 'mixed';
   form: PoemForm;
   rhymeGroups: RhymeGroup[];
+  meterSource: 'local' | 'rantanplan';  // who scanned the meter and stress
 }
 
 // ─── Semantic / emotion lexicon ─────────────────────────────────────────────────────
@@ -527,6 +529,38 @@ function analyzeVerse(line: string): { field: SemanticField; density: number } {
   return { field, density };
 }
 
+// Approximate stress pattern for a verse: each content word contributes its
+// stressed syllable; the pattern is then resampled to the metrical length.
+// Rantanplan (see lib/scansion.ts) replaces this with a real scansion.
+export function approximateStress(line: string, metricalLength: number): string {
+  const words = line
+    .replace(/[¿¡?!.,;:—–"'""“”''«»()[\]]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+  const raw: boolean[] = [];
+  for (const w of words) {
+    const n = syllablesInWord(w);
+    const marks = new Array<boolean>(n).fill(false);
+    if (!FUNCTION_WORDS.has(w.toLowerCase())) {
+      const st = stressType(w);
+      const pos = st === 'aguda' ? n - 1 : st === 'llana' ? n - 2 : n - 3;
+      marks[Math.max(0, Math.min(n - 1, pos))] = true;
+    }
+    raw.push(...marks);
+  }
+  const len = Math.max(1, metricalLength);
+  if (!raw.length) return '-'.repeat(len);
+  let out = '';
+  for (let i = 0; i < len; i++) {
+    const from = Math.floor((i / len) * raw.length);
+    const to = Math.max(from + 1, Math.floor(((i + 1) / len) * raw.length));
+    out += raw.slice(from, to).some(Boolean) ? '+' : '-';
+  }
+  // Spanish verse always carries stress on the penultimate metrical syllable.
+  if (len >= 2) out = out.slice(0, len - 2) + '+-';
+  return out;
+}
+
 // ─── Syntagma segmentation ────────────────────────────────────────────────────────────────
 
 // A syntagma is a group of words separated by commas, semicolons, colons,
@@ -631,7 +665,7 @@ function getRhymeSignature(word: string): { consonante: string; asonante: string
   };
 }
 
-function detectRhymes(allVerses: ParsedVerse[]): RhymeGroup[] {
+export function detectRhymes(allVerses: ParsedVerse[]): RhymeGroup[] {
   const verseData = allVerses.map((v, idx) => {
     const words = v.text
       .replace(/[¡!¿?.,;:—–"'""“”''«»()[\]]/g, '')
@@ -702,7 +736,7 @@ const METER_NAMES: Record<number, string> = {
   14: 'alejandrino',
 };
 
-function detectForm(counts: number[], stanzas: ParsedStanza[]): PoemForm {
+export function detectForm(counts: number[], stanzas: ParsedStanza[]): PoemForm {
   const total = counts.length;
   if (!total) {
     return { name: 'Verso libre', dominantMeter: 8, meterName: 'octosílabo', regularPercent: 0, isRegular: false };
@@ -820,6 +854,7 @@ export function parsePoem(text: string): ParsedPoem {
         verseIndex: globalVerseIdx,
         syntagmas,
         rhymeGroupIndex: -1,
+        stress: approximateStress(line, syl),
       };
 
       verses.push(v);
@@ -882,6 +917,7 @@ export function parsePoem(text: string): ParsedPoem {
     language: lang,
     form,
     rhymeGroups,
+    meterSource: 'local',
   };
 }
 
