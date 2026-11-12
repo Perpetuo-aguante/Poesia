@@ -1,0 +1,64 @@
+{
+  "_doc": "Perpetuo emotion taxonomy. Source of truth for the app (lib/emotions) and the lexicon pipeline (emotion-lab/). valence: -1 (painful) … 1 (pleasant). arousal: 0 (still) … 1 (agitated). negatedTo: what 'no / sin / nunca + this emotion' leans to. Colors of the 13 original emotions are unchanged.",
+  "families": [
+    { "id": "alegría",    "label": "alegría",    "color": [245, 200, 15] },
+    { "id": "amor",       "label": "amor",       "color": [225, 75, 110] },
+    { "id": "esperanza",  "label": "esperanza",  "color": [105, 200, 55] },
+    { "id": "asombro",    "label": "asombro",    "color": [0, 165, 195] },
+    { "id": "tristeza",   "label": "tristeza",   "color": [65, 105, 190] },
+    { "id": "miedo",      "label": "miedo",      "color": [90, 20, 130] },
+    { "id": "ira",        "label": "ira",        "color": [230, 35, 15] },
+    { "id": "rechazo",    "label": "rechazo",    "color": [120, 115, 55] },
+    { "id": "conciencia", "label": "conciencia", "color": [55, 95, 160] }
+  ],
+  "emotions": [
+    { "id": "alegría",     "family": "alegría",    "valence": 0.85,  "arousal": 0.70, "color": [245, 200, 15],  "negatedTo": "tristeza",   "desc": "contento, dicha, risa, fiesta" },
+    { "id": "júbilo",      "family": "alegría",    "valence": 0.95,  "arousal": 0.95, "color": [255, 160, 0],   "negatedTo": "tristeza",   "desc": "euforia, exultación, celebración desbordada, triunfo" },
+    { "id": "gozo",        "family": "alegría",    "valence": 0.80,  "arousal": 0.55, "color": [235, 140, 75],  "negatedTo": "hastío",     "desc": "placer sensorial, deleite, dulzura, sabor, calor, plenitud del cuerpo" },
+    { "id": "serenidad",   "family": "alegría",    "valence": 0.60,  "arousal": 0.12, "color": [110, 185, 170], "negatedTo": "angustia",   "desc": "paz, calma, quietud, sosiego, reposo, armonía con la naturaleza" },
+    { "id": "gratitud",    "family": "alegría",    "valence": 0.70,  "arousal": 0.35, "color": [220, 180, 95],  "negatedTo": null,         "desc": "agradecimiento, bendición, don, ofrenda, alabanza" },
+
+    { "id": "amor",        "family": "amor",       "valence": 0.80,  "arousal": 0.55, "color": [225, 75, 110],  "negatedTo": "soledad",    "desc": "amor, amado/a, querer, corazón enamorado" },
+    { "id": "deseo",       "family": "amor",       "valence": 0.50,  "arousal": 0.85, "color": [195, 25, 65],   "negatedTo": "hastío",     "desc": "deseo erótico, pasión, beso, piel, labios, fuego del cuerpo" },
+    { "id": "ternura",     "family": "amor",       "valence": 0.75,  "arousal": 0.25, "color": [240, 150, 170], "negatedTo": "soledad",    "desc": "ternura, caricia, cuidado, infancia protegida, madre, regazo" },
+    { "id": "devoción",    "family": "amor",       "valence": 0.60,  "arousal": 0.45, "color": [175, 85, 160],  "negatedTo": "desengaño",  "desc": "fe, adoración, oración, lo sagrado, Dios, entrega reverente" },
+    { "id": "celos",       "family": "amor",       "valence": -0.60, "arousal": 0.75, "color": [140, 155, 35],  "negatedTo": null,         "desc": "celos, rival, traición amorosa, sospecha, posesión" },
+
+    { "id": "optimismo",   "family": "esperanza",  "valence": 0.70,  "arousal": 0.55, "color": [105, 200, 55],  "negatedTo": "desolación", "desc": "confianza en el porvenir, renacer, mañana, primavera, amanecer" },
+    { "id": "esperanza",   "family": "esperanza",  "valence": 0.60,  "arousal": 0.45, "color": [55, 165, 110],  "negatedTo": "desolación", "desc": "esperar, aguardar con fe, promesa, semilla, alba" },
+    { "id": "anhelo",      "family": "esperanza",  "valence": 0.05,  "arousal": 0.55, "color": [150, 110, 195], "negatedTo": "resignación","desc": "anhelo, ansia, búsqueda, sed, lo inalcanzable, horizonte" },
+
+    { "id": "asombro",     "family": "asombro",    "valence": 0.40,  "arousal": 0.75, "color": [0, 165, 195],   "negatedTo": "hastío",     "desc": "maravilla, sorpresa, deslumbramiento, prodigio" },
+    { "id": "misterio",    "family": "asombro",    "valence": 0.00,  "arousal": 0.40, "color": [70, 80, 150],   "negatedTo": null,         "desc": "enigma, secreto, lo oculto, lo infinito, el arcano, la noche estrellada" },
+    { "id": "éxtasis",     "family": "asombro",    "valence": 0.80,  "arousal": 0.95, "color": [215, 95, 215],  "negatedTo": null,         "desc": "arrebato místico, trance, embriaguez, fusión, lo sublime" },
+
+    { "id": "tristeza",    "family": "tristeza",   "valence": -0.70, "arousal": 0.30, "color": [65, 105, 190],  "negatedTo": "alegría",    "desc": "pena, llanto, lágrimas, dolor del alma" },
+    { "id": "melancolía",  "family": "tristeza",   "valence": -0.45, "arousal": 0.18, "color": [95, 115, 150],  "negatedTo": null,         "desc": "melancolía, tedio dulce, otoño, lluvia, gris, crepúsculo, bruma" },
+    { "id": "soledad",     "family": "tristeza",   "valence": -0.55, "arousal": 0.20, "color": [125, 145, 170], "negatedTo": "amor",       "desc": "soledad, ausencia, vacío, abandono, silencio, nadie" },
+    { "id": "nostalgia",   "family": "tristeza",   "valence": -0.20, "arousal": 0.25, "color": [185, 130, 70],  "negatedTo": null,         "desc": "recuerdo, pasado, infancia perdida, ayer, regreso, patria" },
+    { "id": "duelo",       "family": "tristeza",   "valence": -0.85, "arousal": 0.35, "color": [65, 60, 75],    "negatedTo": null,         "desc": "muerte, luto, tumba, cadáver, ceniza, entierro, pérdida" },
+    { "id": "desolación",  "family": "tristeza",   "valence": -0.90, "arousal": 0.15, "color": [40, 50, 95],    "negatedTo": "esperanza",  "desc": "desesperanza, ruina, nada, páramo, abismo sin salida" },
+
+    { "id": "miedo",       "family": "miedo",      "valence": -0.75, "arousal": 0.85, "color": [90, 20, 130],   "negatedTo": "serenidad",  "desc": "miedo, terror, espanto, amenaza, monstruo, sombra que acecha" },
+    { "id": "angustia",    "family": "miedo",      "valence": -0.80, "arousal": 0.75, "color": [135, 40, 105],  "negatedTo": "serenidad",  "desc": "angustia existencial, zozobra, ahogo, agonía, tormento" },
+    { "id": "inseguridad", "family": "miedo",      "valence": -0.45, "arousal": 0.50, "color": [110, 135, 105], "negatedTo": null,         "desc": "duda, incertidumbre, vacilación, perderse, no saber" },
+    { "id": "desamparo",   "family": "miedo",      "valence": -0.70, "arousal": 0.40, "color": [105, 95, 125],  "negatedTo": null,         "desc": "indefensión, orfandad, intemperie, frío, hambre, pobreza" },
+
+    { "id": "furia",       "family": "ira",        "valence": -0.80, "arousal": 0.95, "color": [230, 35, 15],   "negatedTo": "serenidad",  "desc": "ira, cólera, rabia, violencia, guerra, golpe" },
+    { "id": "frustración", "family": "ira",        "valence": -0.60, "arousal": 0.70, "color": [195, 95, 25],   "negatedTo": null,         "desc": "impotencia, obstáculo, fracaso, cadena, muro, en vano" },
+    { "id": "rencor",      "family": "ira",        "valence": -0.70, "arousal": 0.60, "color": [140, 30, 35],   "negatedTo": null,         "desc": "rencor, odio, venganza, resentimiento, veneno" },
+    { "id": "indignación", "family": "ira",        "valence": -0.55, "arousal": 0.80, "color": [215, 75, 45],   "negatedTo": null,         "desc": "injusticia, protesta, opresión, tirano, explotación, denuncia" },
+
+    { "id": "desprecio",   "family": "rechazo",    "valence": -0.60, "arousal": 0.55, "color": [125, 110, 60],  "negatedTo": null,         "desc": "desdén, burla, soberbia ajena, vileza, mezquindad" },
+    { "id": "asco",        "family": "rechazo",    "valence": -0.75, "arousal": 0.65, "color": [110, 130, 40],  "negatedTo": null,         "desc": "asco, podredumbre, inmundicia, gusano, lodo, hedor" },
+    { "id": "hastío",      "family": "rechazo",    "valence": -0.50, "arousal": 0.08, "color": [150, 140, 120], "negatedTo": null,         "desc": "tedio, aburrimiento, cansancio, spleen, rutina, lo gastado" },
+    { "id": "desengaño",   "family": "rechazo",    "valence": -0.55, "arousal": 0.30, "color": [135, 100, 80],  "negatedTo": null,         "desc": "desengaño, vanidad del mundo, engaño, ilusión rota, polvo, humo" },
+
+    { "id": "deber",       "family": "conciencia", "valence": 0.10,  "arousal": 0.45, "color": [55, 95, 160],   "negatedTo": null,         "desc": "deber, ley, trabajo, obediencia, justicia, servicio" },
+    { "id": "honor",       "family": "conciencia", "valence": 0.50,  "arousal": 0.60, "color": [200, 165, 15],  "negatedTo": "vergüenza",  "desc": "honor, gloria, heroísmo, valor, fama, laurel, patria épica" },
+    { "id": "orgullo",     "family": "conciencia", "valence": 0.40,  "arousal": 0.65, "color": [165, 130, 60],  "negatedTo": "vergüenza",  "desc": "orgullo, altivez, dignidad, soberbia propia, desafío" },
+    { "id": "culpa",       "family": "conciencia", "valence": -0.65, "arousal": 0.50, "color": [110, 70, 60],   "negatedTo": null,         "desc": "culpa, pecado, remordimiento, perdón, penitencia, castigo" },
+    { "id": "vergüenza",   "family": "conciencia", "valence": -0.60, "arousal": 0.55, "color": [205, 110, 100], "negatedTo": "orgullo",    "desc": "vergüenza, humillación, deshonra, sonrojo, pudor" },
+    { "id": "resignación", "family": "conciencia", "valence": -0.35, "arousal": 0.10, "color": [145, 120, 175], "negatedTo": null,         "desc": "aceptar, conformarse, destino, ceder, rendirse, así es" }
+  ]
+}

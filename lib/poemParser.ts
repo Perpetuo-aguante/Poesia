@@ -1,3 +1,5 @@
+import { getEmotionEngine, EMOTIONS, FAMILIES, LexHit } from './emotions';
+
 // ──────────────────────────────────────────────────────────────────────────────────
 // Perpetuo — Poem Parser
 // Converts raw poem text into a structured object with metric, rhythmic,
@@ -8,9 +10,12 @@
 //   • Diptongo / hiato / triptongo within words
 //   • Coda-stress adjustment: aguda +1, llana ±0, esdrújula −1
 //
-// Emotion system (13 categories + neutral):
-//   nostalgia, inseguridad, miedo, deber, amor, honor, duelo, tristeza,
-//   resignación, furia, frustración, optimismo, alegría
+// Emotion system: 40 emotions in 9 families (lib/emotions/taxonomy.json),
+//   scored by lib/emotions/engine.ts with lexicons built from a 5,000-poem
+//   Spanish corpus and a 450-poem English corpus (see emotion-lab/).
+//   Every verse carries a full emotion vector plus valence and arousal;
+//   `field` is its strongest emotion ('neutral' only when nothing in the
+//   verse or its surroundings carries emotion).
 //
 // Syntagma coloring: each verse is split into rhythmic groups (syntagmas)
 //   separated by internal punctuation; each syntagma is colored by its
@@ -18,19 +23,58 @@
 // ──────────────────────────────────────────────────────────────────────────────────
 
 export type SemanticField =
-  | 'nostalgia'
-  | 'inseguridad'
-  | 'miedo'
-  | 'deber'
+  | 'alegría'
+  | 'júbilo'
+  | 'gozo'
+  | 'serenidad'
+  | 'gratitud'
   | 'amor'
-  | 'honor'
-  | 'duelo'
+  | 'deseo'
+  | 'ternura'
+  | 'devoción'
+  | 'celos'
+  | 'optimismo'
+  | 'esperanza'
+  | 'anhelo'
+  | 'asombro'
+  | 'misterio'
+  | 'éxtasis'
   | 'tristeza'
-  | 'resignación'
+  | 'melancolía'
+  | 'soledad'
+  | 'nostalgia'
+  | 'duelo'
+  | 'desolación'
+  | 'miedo'
+  | 'angustia'
+  | 'inseguridad'
+  | 'desamparo'
   | 'furia'
   | 'frustración'
-  | 'optimismo'
+  | 'rencor'
+  | 'indignación'
+  | 'desprecio'
+  | 'asco'
+  | 'hastío'
+  | 'desengaño'
+  | 'deber'
+  | 'honor'
+  | 'orgullo'
+  | 'culpa'
+  | 'vergüenza'
+  | 'resignación'
+  | 'neutral';
+
+export type EmotionFamily =
   | 'alegría'
+  | 'amor'
+  | 'esperanza'
+  | 'asombro'
+  | 'tristeza'
+  | 'miedo'
+  | 'ira'
+  | 'rechazo'
+  | 'conciencia'
   | 'neutral';
 
 export interface FieldColor {
@@ -84,13 +128,36 @@ export interface ParsedVerse {
   verseIndex: number;             // global (across all stanzas)
   syntagmas: ParsedSyntagma[];    // rhythmic sub-groups within this verse
   rhymeGroupIndex: number;        // index into poem.rhymeGroups, or -1
+  emotion: VerseEmotionInfo;      // full emotional reading of the verse
   stress: string;                 // stress pattern, one char per metrical syllable: '+' stressed, '-' unstressed
+}
+
+// Emotional reading of a verse. `vector` is indexed like EMOTION_IDS and sums
+// to 1 (all zeros when neutral); it already includes context from the
+// neighbouring verses, the stanza and the poem.
+export interface VerseEmotionInfo {
+  vector: number[];
+  family: EmotionFamily;
+  confidence: number;   // 0–1: share of the top emotion
+  intensity: number;    // 0–1: emotional charge of the verse's own words
+  valence: number;      // -1 (painful) … 1 (pleasant)
+  arousal: number;      // 0 (still) … 1 (agitated)
+  hits: LexHit[];       // the words that carried emotion
+}
+
+export interface PoemEmotionInfo {
+  distribution: Record<SemanticField, number>;  // sums to 1 over the 40 emotions
+  families: Record<EmotionFamily, number>;      // sums to 1 over the 9 families
+  valence: number;
+  arousal: number;
+  arc: { valence: number; arousal: number }[];  // per verse, for timelines
 }
 
 export interface ParsedStanza {
   verses: ParsedVerse[];
   index: number;
   dominantField: SemanticField;
+  emotionVector: number[];        // mean of its verses' vectors
   avgDensity: number;
   contrastWithPrev: number;       // 0–1 semantic contrast vs prev stanza
 }
@@ -105,165 +172,43 @@ export interface ParsedPoem {
   language: 'es' | 'en' | 'mixed';
   form: PoemForm;
   rhymeGroups: RhymeGroup[];
+  emotion: PoemEmotionInfo;
   meterSource: 'local' | 'rantanplan';  // who scanned the meter and stress
 }
 
-// ─── Semantic / emotion lexicon ─────────────────────────────────────────────────────
-
-const LEXICON: Record<SemanticField, string[]> = {
-
-  nostalgia: [
-    'recuerdo','memoria','pasado','antes','ayer','añoranza','lejos','infancia',
-    'hogar','viejo','antiguo','regreso','volver','patria','raíz','origen',
-    'solía','reminiscencia','evocación','bruma','niebla','tarde','ocaso',
-    'niñez','pueblo','retorno','nostalgia','entrañable','querido','adorado',
-    'olvidado','distante','lejano','antaño','otrora','recordar','evocar',
-    'regresar','añorar','marchado','retornar','añejo','sepia','abuelo',
-    'abuela','dulce','tiempos','fue','era','aquellos','entonces','antes',
-    'viejos','perdido','ausente','amado','idos','huir','partir','dejado',
-  ],
-
-  inseguridad: [
-    'duda','quizás','acaso','vacilación','temblor','incertidumbre','frágil',
-    'débil','confuso','desorientado','incierto','indeciso','temblar','vacilar',
-    'tropezar','abismo','vértigo','nadie','invisible','susurrar','murmurar',
-    'dudar','titubear','flaquear','sombra','inquietar','inseguro','vaciar',
-    'perderse','hundir','titubeo','quizá','acaso','quién','tal','sabe',
-    'puede','nunca','apenas','difícil','imposible','si','no','quizás',
-    'flaquear','tambalearse','desvanecerse','borde','precipicio',
-  ],
-
-  miedo: [
-    'terror','espanto','horror','pánico','susto','aterrar','temer','temblar',
-    'oscuridad','noche','amenaza','peligro','huir','escapar','acecho',
-    'pesadilla','grito','atroz','trampa','abismo','oscuro','frío','helado',
-    'retroceder','esconder','chillar','aullar','acechar','vigilar','bestia',
-    'monstruo','tiniebla','oscurecer','amenazar','perseguir','aterrorizar',
-    'miedo','temeroso','aterrado','espantoso','horrible','helarse','erizar',
-    'temblor','sobresalto','escalofría','erizarse','angustia','angustiar',
-  ],
-
-  deber: [
-    'deber','obligación','cumplir','responsabilidad','mandato','ley','norma',
-    'juramento','promesa','compromiso','servir','obedecer','honrar','patria',
-    'empresa','tarea','misión','llamado','imperativo','vocación','obrar',
-    'actuar','sacrificio','ofrendar','cargar','tolerar','asumir','necesario',
-    'inevitable','recto','moral','ética','imperativo','fidelidad','lealtad',
-    'deber','destino','cumplimiento','disciplina','rigor','servicio','sacrificar',
-    'dedicar','consagrar','empeñar','jurar','comprometerse','entregar',
-  ],
-
-  amor: [
-    'amor','amar','querer','corazón','ternura','enamorado','beso','abrazo',
-    'caricia','latido','pasión','deseo','adorar','unión','llama','entrega',
-    'dulzura','anhelo','suspiro','íntimo','fiel','devoto','sublime','hermoso',
-    'tierno','cálido','amante','adorada','sentir','enamorarse','arder',
-    'querida','amado','idolatrar','enamorada','amor','pasionar','volcar',
-    'devoción','adoración','rendirse','quemarse','fusión','cariño','afecto',
-    'terneza','apasionado','encender','inflamar','apasionar',
-  ],
-
-  honor: [
-    'honor','gloria','dignidad','nobleza','valor','orgullo','virtud',
-    'heroísmo','hazaña','laurel','corona','triunfo','mérito','integridad',
-    'rectitud','lealtad','gesta','grandeza','inmortal','exaltar','rendir',
-    'jurar','defender','proteger','noble','digno','glorioso','heroico',
-    'valeroso','venerar','celebrar','épico','imperecedero','venerar',
-    'ensalzar','enaltecer','ennoblecer','honra','prez','fama','renombre',
-    'reputación','distinción','lustre','heroína','héroe','gesta','epopeya',
-  ],
-
-  duelo: [
-    'duelo','luto','muerte','morir','perder','pérdida','ausencia','vacío',
-    'tumba','sepulcro','entierro','lágrima','llorar','dolor','pena','pesar',
-    'despedida','último','final','ceniza','hueso','yerto','quieto','velatorio',
-    'orfandad','viudez','desconsuelo','irremediable','irreversible','definitivo',
-    'gemir','sollozar','lamentar','fúnebre','difunto','cadáver','eterno',
-    'ausente','ido','muerto','fallecer','expirar','perecer','sucumbir',
-    'sepultar','enterrar','finado','epitafio','tánatos','réquiem',
-  ],
-
-  tristeza: [
-    'tristeza','triste','melancolía','sufrir','lágrima','soledad','abatimiento',
-    'desolación','gris','pesado','lamento','gemido','angustia','opresión',
-    'ahogo','apagar','marchitar','desfallecer','hundir','bajar','pesadumbre',
-    'aflicción','congoja','amargura','acongojado','sombra','oscuro','nublado',
-    'llanto','penoso','sufriente','desolado','deprimido','abatido','apenado',
-    'sufrimiento','quebranto','tribulación','melancolizar','entristecerse',
-    'agobian','oprimir','abrumar','afligir','angustiar','desolar',
-  ],
-
-  'resignación': [
-    'resignación','aceptar','rendirse','ceder','conformar','inevitable',
-    'claudicar','silencio','callar','aguantar','soportar','paciencia',
-    'adaptarse','limitación','muro','barrera','peso','carga','yugo',
-    'quieto','estático','inmóvil','inmutable','pasivo','someterse','inclinarse',
-    'resignar','tolerar','sujetar','aceptación','conformarse','renunciar',
-    'resignado','tranquilizar','asumir','destinar','fatalismo','fatum',
-    'sino','fado','inercia','quietud','remanso','calma','sosiego',
-  ],
-
-  furia: [
-    'furia','rabia','ira','cólera','enfurecer','rugir','gritar','golpear',
-    'destrozar','violento','ardiente','explosión','ardor','incendio',
-    'tempestad','tormenta','volcán','trueno','relámpago','bramido','rugido',
-    'salvaje','devastar','destruir','arrasar','atacar','empujar','romper',
-    'quebrar','sacudir','agitar','iracundo','furioso','rabioso','hervir',
-    'ebullición','incendiar','arrebato','vehemencia','impetuoso','ardoroso',
-    'desatar','desbordarse','estallido','explosivo','devastación',
-  ],
-
-  'frustración': [
-    'frustración','fracaso','fallo','inútil','vano','estéril','obstáculo',
-    'barrera','impedimento','tropiezo','caída','derrota','fallido','imposible',
-    'desilusión','desengaño','decepción','inservible','roto','incompleto',
-    'truncado','agotado','desesperanza','desaliento','desanimo','perder',
-    'fracasar','maldito','baldío','abortado','frustrar','malograr','errar',
-    'fallar','sucumbir','atascarse','estancarse','bloquearse','cerrado',
-    'imposibilidad','desilusionar','desencantar','decepcionar',
-  ],
-
-  optimismo: [
-    'esperanza','posible','mañana','futuro','luz','brillo','florecer','crecer',
-    'renovar','nuevo','amanecer','alba','promesa','confianza','fe','lograr',
-    'alcanzar','superar','surgir','renacer','brotar','germinar','edificar',
-    'construir','elevar','volar','soñar','imaginar','creer','confiar','avanzar',
-    'progresar','ascender','iluminar','despertar','comenzar','posibilidad',
-    'abrirse','potencial','impulso','aliento','vigor','ímpetu','entusiasmo',
-    'ilusión','anhelo','aspirar','anhelar','resurgir','renovación',
-  ],
-
-  'alegría': [
-    'alegría','gozo','júbilo','celebrar','reír','fiesta','danza','cantar',
-    'saltar','vibrar','contento','feliz','dichoso','plenitud','placer',
-    'deleite','exultación','risa','euforia','esplendor','brillar','relucir',
-    'festejar','compartir','gozar','exultar','pleno','radiante','exuberante',
-    'vivo','vital','alegrarse','alborozar','retozar','brincar','sonreír',
-    'jovial','regocijo','júbilo','exaltación','vitalidad','desbordante',
-    'entusiasmo','animación','efervescente','jocundo','risueño',
-  ],
-
-  neutral: [],
-};
-
 // ─── Field colors — base palette (Bloques mode) ────────────────────────────────────
 
-const FIELD_COLORS: Record<SemanticField, FieldColor> = {
-  nostalgia:      { r: 185, g: 130, b:  70 }, // warm amber/sepia
-  inseguridad:    { r: 110, g: 135, b: 105 }, // sage grey-green
-  miedo:          { r:  90, g:  20, b: 130 }, // deep purple
-  deber:          { r:  55, g:  95, b: 160 }, // steel blue
-  amor:           { r: 225, g:  75, b: 110 }, // rose
-  honor:          { r: 200, g: 165, b:  15 }, // gold
-  duelo:          { r:  65, g:  60, b:  75 }, // near-black purple
-  tristeza:       { r:  65, g: 105, b: 190 }, // cerulean blue
-  'resignación':  { r: 145, g: 120, b: 175 }, // dusty lavender
-  furia:          { r: 230, g:  35, b:  15 }, // intense red-orange
-  'frustración':  { r: 195, g:  95, b:  25 }, // burnt sienna
-  optimismo:      { r: 105, g: 200, b:  55 }, // spring green
-  'alegría':      { r: 245, g: 200, b:  15 }, // sunny yellow
-  neutral:        { r: 155, g: 150, b: 140 }, // warm grey
+const FIELD_COLORS = Object.fromEntries([
+  ...EMOTIONS.map(e => [e.id, { r: e.color[0], g: e.color[1], b: e.color[2] }]),
+  ['neutral', { r: 155, g: 150, b: 140 }], // warm grey
+]) as Record<SemanticField, FieldColor>;
+
+const FAMILY_COLORS = Object.fromEntries([
+  ...FAMILIES.map(f => [f.id, { r: f.color[0], g: f.color[1], b: f.color[2] }]),
+  ['neutral', { r: 155, g: 150, b: 140 }],
+]) as Record<EmotionFamily, FieldColor>;
+
+// The 13 emotions of the first version (plus neutral). Older views keyed by
+// them map each newer emotion to an original one of the same family.
+export type LegacyField =
+  | 'nostalgia' | 'inseguridad' | 'miedo' | 'deber' | 'amor' | 'honor' | 'duelo'
+  | 'tristeza' | 'resignación' | 'furia' | 'frustración' | 'optimismo' | 'alegría' | 'neutral';
+const LEGACY = new Set<string>(['nostalgia', 'inseguridad', 'miedo', 'deber', 'amor', 'honor', 'duelo',
+  'tristeza', 'resignación', 'furia', 'frustración', 'optimismo', 'alegría', 'neutral']);
+const LEGACY_BY_FAMILY: Record<string, LegacyField> = {
+  alegría: 'alegría', amor: 'amor', esperanza: 'optimismo', asombro: 'optimismo', tristeza: 'tristeza',
+  miedo: 'miedo', ira: 'furia', rechazo: 'frustración', conciencia: 'deber',
 };
+export function legacyField(field: SemanticField): LegacyField {
+  if (LEGACY.has(field)) return field as LegacyField;
+  return LEGACY_BY_FAMILY[EMOTION_FAMILY[field]] ?? 'neutral';
+}
+
+export const EMOTION_IDS = EMOTIONS.map(e => e.id) as Exclude<SemanticField, 'neutral'>[];
+export const EMOTION_FAMILY = Object.fromEntries([
+  ...EMOTIONS.map(e => [e.id, e.family]),
+  ['neutral', 'neutral'],
+]) as Record<SemanticField, EmotionFamily>;
 
 // ─── Rhyme group color palette ──────────────────────────────────────────────────────────────
 
@@ -439,94 +384,30 @@ const FUNCTION_WORDS = new Set([
   'i','you','our','your','their','all','also','just','or','if','as','so',
 ]);
 
-const IRREGULAR_ROOTS: Record<string, string> = {
-  'soy':'ser','eres':'ser','somos':'ser','son':'ser',
-  'era':'ser','eras':'ser','éramos':'ser','eran':'ser',
-  'fui':'ser','fue':'ser','fuimos':'ser','fueron':'ser',
-  'voy':'ir','vas':'ir','va':'ir','vamos':'ir','van':'ir',
-  'iba':'ir','ibas':'ir','íbamos':'ir','iban':'ir',
-  'doy':'dar','das':'dar','da':'dar','damos':'dar','dan':'dar',
-  'di':'dar','dio':'dar','dimos':'dar','dieron':'dar',
-  'estoy':'estar','estás':'estar','está':'estar','estamos':'estar',
-  'hago':'hacer','haces':'hacer','hace':'hacer','hacemos':'hacer',
-  'hice':'hacer','hizo':'hacer','hicimos':'hacer',
-  'pongo':'poner','pones':'poner','pone':'poner',
-  'tengo':'tener','tienes':'tener','tiene':'tener','tenemos':'tener',
-  'tuve':'tener','tuvo':'tener','tuvimos':'tener',
-  'vengo':'venir','vienes':'venir','viene':'venir','venimos':'venir',
-  'vine':'venir','vino':'venir','vinimos':'venir',
-  'quiero':'querer','quieres':'querer','quiere':'querer',
-  'quise':'querer','quiso':'querer',
-  'sigo':'seguir','sigues':'seguir','sigue':'seguir',
-  'vuelo':'volar','vuelas':'volar','vuela':'volar',
-  'caigo':'caer','cae':'caer','caen':'caer','cayó':'caer','caí':'caer',
-  'sé':'saber','sabes':'saber','sabe':'saber',
-  'puedo':'poder','puedes':'poder','puede':'poder',
-  'digo':'decir','dices':'decir','dice':'decir',
-  'veo':'ver','ves':'ver','veía':'ver','veías':'ver',
-  'traigo':'traer','traes':'traer','trae':'traer',
-  'llevo':'llevar','llevas':'llevar','lleva':'llevar',
-  'siento':'sentir','sientes':'sentir','siente':'sentir',
-  'muero':'morir','mueres':'morir','muere':'morir',
-  'duermo':'dormir','duermes':'dormir','duerme':'dormir',
-  'temo':'temer','temes':'temer','teme':'temer',
-  'amo':'amar','amas':'amar','ama':'amar','amamos':'amar',
-  'sufro':'sufrir','sufres':'sufrir','sufre':'sufrir',
-  'lloro':'llorar','lloras':'llorar','llora':'llorar',
-  'río':'reír','ríes':'reír','ríe':'reír',
-  'canto':'cantar','cantas':'cantar','canta':'cantar',
-  'bailo':'bailar','bailas':'bailar','baila':'bailar',
-};
-
 function zeroScores(): Record<SemanticField, number> {
-  return {
-    nostalgia: 0, inseguridad: 0, miedo: 0, deber: 0, amor: 0, honor: 0,
-    duelo: 0, tristeza: 0, 'resignación': 0, furia: 0, 'frustración': 0,
-    optimismo: 0, 'alegría': 0, neutral: 0,
-  };
+  return Object.fromEntries(Object.keys(FIELD_COLORS).map(f => [f, 0])) as Record<SemanticField, number>;
 }
 
-function analyzeVerse(line: string): { field: SemanticField; density: number } {
+// Share of content words in a verse (drives animation speed).
+function lexicalDensity(line: string): number {
   const words = line.toLowerCase()
     .replace(/[¿¡?!.,;:—–"'""“”''«»()[\]]/g, ' ')
     .split(/\s+/)
     .filter(Boolean);
+  if (!words.length) return 0;
+  return words.filter(w => !FUNCTION_WORDS.has(w)).length / words.length;
+}
 
-  if (!words.length) return { field: 'neutral', density: 0 };
+function topOf(vector: ArrayLike<number>): SemanticField {
+  let best = -1;
+  for (let i = 0; i < vector.length; i++) if (vector[i] > 0 && (best < 0 || vector[i] > vector[best])) best = i;
+  return best < 0 ? 'neutral' : EMOTION_IDS[best];
+}
 
-  const contentWords = words.filter(w => !FUNCTION_WORDS.has(w));
-  const density = contentWords.length / words.length;
-
-  const scores = zeroScores();
-
-  for (const w of contentWords) {
-    const root = IRREGULAR_ROOTS[w] ?? w;
-    const stem = root
-      .replace(/(?:ándose|iéndose|ándome|iéndome)$/, '')
-      .replace(/(?:ando|iendo|aron|ieron|aré|eré|iré|aban|ían|emos|éis|ais|ois|aban|rse|ndo|ndose)$/, '')
-      .replace(/(?:ado|ido|ar|er|ir|aba|ía)$/, '')
-      .replace(/(?:ción|ciones|mente|dad|dades|eza|ismo|ista)$/, '')
-      .replace(/(?:es|as|os|s)$/, '');
-
-    for (const [field, lexWords] of Object.entries(LEXICON) as [SemanticField, string[]][]) {
-      if (field === 'neutral') continue;
-      const match = lexWords.some(lw => {
-        if (lw === w || lw === root || lw === stem) return true;
-        if (stem.length >= 5 && lw.length >= 5 && stem.startsWith(lw.slice(0, 5))) return true;
-        return false;
-      });
-      if (match) scores[field]++;
-    }
-  }
-
-  const topField = (Object.entries(scores) as [SemanticField, number][])
-    .filter(([f]) => f !== 'neutral')
-    .sort((a, b) => b[1] - a[1])[0];
-
-  const field: SemanticField =
-    topField && topField[1] > 0 ? topField[0] : 'neutral';
-
-  return { field, density };
+function cosine(a: number[], b: number[]): number {
+  let ab = 0, aa = 0, bb = 0;
+  for (let i = 0; i < a.length; i++) { ab += a[i] * b[i]; aa += a[i] * a[i]; bb += b[i] * b[i]; }
+  return aa && bb ? ab / Math.sqrt(aa * bb) : 0;
 }
 
 // Approximate stress pattern for a verse: each content word contributes its
@@ -569,13 +450,17 @@ export function approximateStress(line: string, metricalLength: number): string 
 function segmentSyntagmas(
   text: string,
   lang: 'es' | 'en' | 'mixed',
+  verseVector: ArrayLike<number>,
 ): ParsedSyntagma[] {
   const parts = text.split(/[,;:—–]/).map(p => p.trim()).filter(Boolean);
-
   const segments = parts.length > 0 ? parts : [text];
+  const engine = getEmotionEngine();
 
   return segments.map(p => {
-    const { field, density: _density } = analyzeVerse(p);
+    // A syntagma's own words, coloured by the verse it belongs to.
+    const { raw } = engine.scoreText(p, lang);
+    const mixed = Array.from(raw, (x, i) => x + 0.6 * verseVector[i]);
+    const field = topOf(mixed);
     return {
       text: p,
       syllables: Math.max(1, verseSyllables(p, lang)),
@@ -812,29 +697,36 @@ export function parsePoem(text: string): ParsedPoem {
   const minSyllables = Math.min(...syllableCounts.filter(s => s > 0), 1);
   const avgSyllables = syllableCounts.reduce((a, b) => a + b, 0) / (syllableCounts.length || 1);
 
+  const stanzaLines: string[][] = rawStanzas.map(s =>
+    s.split('\n').map(l => l.trim()).filter(Boolean),
+  );
+  const reading = getEmotionEngine().scorePoem(stanzaLines, lang);
+
   let globalVerseIdx = 0;
   const stanzas: ParsedStanza[] = [];
   const allVerses: ParsedVerse[] = [];
 
-  for (let si = 0; si < rawStanzas.length; si++) {
-    const lines = rawStanzas[si]
-      .split('\n').map(l => l.trim()).filter(Boolean);
-
+  for (let si = 0; si < stanzaLines.length; si++) {
+    const lines = stanzaLines[si];
     const verses: ParsedVerse[] = [];
 
     for (let vi = 0; vi < lines.length; vi++) {
       const line = lines[vi];
       const syl = verseSyllables(line, lang);
-      const { field, density } = analyzeVerse(line);
+      const density = lexicalDensity(line);
+      const emo = reading.verses[globalVerseIdx];
+      const field = emo.top as SemanticField;
+      const vector = Array.from(emo.vector);
       const isExclamatory    = /[!¡]/.test(line);
       const isInterrogative  = /[?¿]/.test(line);
       const hasInternalPause = /[,;—–]/.test(line);
       const isEnjambment     = !/[.!?;:—–]$/.test(line.trimEnd());
 
-      const speed = 0.4 + (1 - density) * 0.6;
+      // Agitated verses move faster; dense verses slower.
+      const speed = 0.3 + (1 - density) * 0.45 + emo.arousal * 0.5;
       const phase = (si * 2.7 + vi * 1.1 + globalVerseIdx * 0.37) % (Math.PI * 2);
 
-      const syntagmas = segmentSyntagmas(line, lang);
+      const syntagmas = segmentSyntagmas(line, lang, vector);
 
       const v: ParsedVerse = {
         text: line,
@@ -854,6 +746,15 @@ export function parsePoem(text: string): ParsedPoem {
         verseIndex: globalVerseIdx,
         syntagmas,
         rhymeGroupIndex: -1,
+        emotion: {
+          vector,
+          family: emo.family as EmotionFamily,
+          confidence: emo.confidence,
+          intensity: emo.intensity,
+          valence: emo.valence,
+          arousal: emo.arousal,
+          hits: emo.hits,
+        },
         stress: approximateStress(line, syl),
       };
 
@@ -862,29 +763,39 @@ export function parsePoem(text: string): ParsedPoem {
       globalVerseIdx++;
     }
 
-    const fieldFreq = zeroScores();
-    verses.forEach(v => { fieldFreq[v.field]++; });
-    const dominantField = (Object.entries(fieldFreq) as [SemanticField, number][])
-      .sort((a, b) => b[1] - a[1])[0][0];
+    const emotionVector = EMOTION_IDS.map((_, e) =>
+      verses.reduce((s, v) => s + v.emotion.vector[e], 0) / (verses.length || 1));
+    const dominantField = topOf(emotionVector);
 
     const avgDensity = verses.reduce((s, v) => s + v.density, 0) / (verses.length || 1);
 
+    // Contrast: how far the stanza's emotional mix moved from the previous one.
     const prevStanza = stanzas[si - 1];
     let contrastWithPrev = 0;
     if (prevStanza) {
-      contrastWithPrev = dominantField !== prevStanza.dominantField ? 0.8 : 0.2;
+      contrastWithPrev = 1 - cosine(emotionVector, prevStanza.emotionVector);
       const densityDiff = Math.abs(avgDensity - prevStanza.avgDensity);
       contrastWithPrev = Math.min(1, contrastWithPrev + densityDiff * 0.5);
     }
 
-    stanzas.push({ verses, index: si, dominantField, avgDensity, contrastWithPrev });
+    stanzas.push({ verses, index: si, dominantField, emotionVector, avgDensity, contrastWithPrev });
   }
 
-  // Poem-level dominant field
-  const globalFreq = zeroScores();
-  allVerses.forEach(v => { globalFreq[v.field]++; });
-  const dominantField = (Object.entries(globalFreq) as [SemanticField, number][])
-    .sort((a, b) => b[1] - a[1])[0][0];
+  // Poem-level reading
+  const distribution = zeroScores();
+  EMOTION_IDS.forEach((id, e) => { distribution[id] = reading.distribution[e]; });
+  const families = Object.fromEntries([
+    ...FAMILIES.map(f => [f.id, reading.families[f.id] ?? 0]),
+    ['neutral', 0],
+  ]) as Record<EmotionFamily, number>;
+  const dominantField = reading.top as SemanticField;
+  const emotion: PoemEmotionInfo = {
+    distribution,
+    families,
+    valence: reading.valence,
+    arousal: reading.arousal,
+    arc: allVerses.map(v => ({ valence: v.emotion.valence, arousal: v.emotion.arousal })),
+  };
 
   // Form detection
   const form = detectForm(syllableCounts, stanzas);
@@ -917,8 +828,9 @@ export function parsePoem(text: string): ParsedPoem {
     language: lang,
     form,
     rhymeGroups,
+    emotion,
     meterSource: 'local',
   };
 }
 
-export { FIELD_COLORS };
+export { FIELD_COLORS, FAMILY_COLORS };

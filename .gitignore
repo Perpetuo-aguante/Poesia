@@ -29,3 +29,6 @@ next-env.d.ts
 # python
 __pycache__/
 *.pyc
+
+# emotion-lab: raw corpora and intermediate files are rebuilt locally
+emotion-lab/data/

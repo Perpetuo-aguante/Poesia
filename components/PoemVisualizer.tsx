@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { ParsedPoem, ParsedVerse, ParsedSyntagma, SemanticField, FieldColor } from '@/lib/poemParser';
+import { ParsedPoem, ParsedVerse, ParsedSyntagma, SemanticField, FieldColor, LegacyField, legacyField } from '@/lib/poemParser';
 
 export type VisMode = 'blocks' | 'pergamino' | 'serigrafia';
 
@@ -14,7 +14,7 @@ interface Props {
 
 // ─── ASCII character sets per emotion field ────────────────────────────────────────────────────────────
 
-const ASCII_CHARS: Record<SemanticField, string[]> = {
+const ASCII_CHARS: Record<LegacyField, string[]> = {
   nostalgia:     ['◌', '·', '○', '∙', '∘', '◦', '⌒', '~', '≈', '…', '‥', '⋯'],
   inseguridad:   ['?', '¿', '/', '\\', '~', '≈', '∽', '⟋', '⟌', '⋱', '⋰', '⋮'],
   miedo:         ['█', '▓', '▒', '░', '■', '▪', '●', '◆', '◉', '◈', '▐', '▌'],
@@ -31,7 +31,7 @@ const ASCII_CHARS: Record<SemanticField, string[]> = {
   neutral:       ['·', '|', '─', '+', '·', ':', '·', '-', '·', '|', '·', '+'],
 };
 
-const SERI_CHARS: Record<SemanticField, string[]> = {
+const SERI_CHARS: Record<LegacyField, string[]> = {
   nostalgia:     ['◌', '○', '◦', '∘', '⊙', '◎', '○', '◯'],
   inseguridad:   ['?', '≈', '∿', '〰', '⋰', '⋱', '⁇', '⁈'],
   miedo:         ['■', '▪', '▬', '▮', '█', '▉', '▊', '▌'],
@@ -55,7 +55,7 @@ function rgba(c: FieldColor, alpha: number): string {
 }
 
 function pergaminoColor(field: SemanticField, alpha: number): string {
-  const colors: Record<SemanticField, FieldColor> = {
+  const colors: Record<LegacyField, FieldColor> = {
     nostalgia:     { r: 155, g:  95, b:  35 },
     inseguridad:   { r:  80, g: 100, b:  75 },
     miedo:         { r:  65, g:  10, b:  90 },
@@ -71,11 +71,11 @@ function pergaminoColor(field: SemanticField, alpha: number): string {
     'alegría':     { r: 215, g: 165, b:   0 },
     neutral:       { r: 100, g:  80, b:  60 },
   };
-  return rgba(colors[field], alpha);
+  return rgba(colors[legacyField(field)], alpha);
 }
 
 function pergaminoColorRaw(field: SemanticField): FieldColor {
-  const colors: Record<SemanticField, FieldColor> = {
+  const colors: Record<LegacyField, FieldColor> = {
     nostalgia:     { r: 155, g:  95, b:  35 },
     inseguridad:   { r:  80, g: 100, b:  75 },
     miedo:         { r:  65, g:  10, b:  90 },
@@ -91,11 +91,11 @@ function pergaminoColorRaw(field: SemanticField): FieldColor {
     'alegría':     { r: 215, g: 165, b:   0 },
     neutral:       { r: 100, g:  80, b:  60 },
   };
-  return colors[field];
+  return colors[legacyField(field)];
 }
 
 function serigrafiaColor(field: SemanticField, alpha: number): string {
-  const colors: Record<SemanticField, FieldColor> = {
+  const colors: Record<LegacyField, FieldColor> = {
     nostalgia:     { r: 145, g:  85, b:  25 },
     inseguridad:   { r:  60, g:  80, b:  60 },
     miedo:         { r:  70, g:   0, b: 110 },
@@ -111,11 +111,11 @@ function serigrafiaColor(field: SemanticField, alpha: number): string {
     'alegría':     { r: 210, g: 180, b:   0 },
     neutral:       { r:  50, g:  50, b:  50 },
   };
-  return rgba(colors[field], alpha);
+  return rgba(colors[legacyField(field)], alpha);
 }
 
 function serigrafiaColorRaw(field: SemanticField): FieldColor {
-  const colors: Record<SemanticField, FieldColor> = {
+  const colors: Record<LegacyField, FieldColor> = {
     nostalgia:     { r: 145, g:  85, b:  25 },
     inseguridad:   { r:  60, g:  80, b:  60 },
     miedo:         { r:  70, g:   0, b: 110 },
@@ -131,7 +131,7 @@ function serigrafiaColorRaw(field: SemanticField): FieldColor {
     'alegría':     { r: 210, g: 180, b:   0 },
     neutral:       { r:  50, g:  50, b:  50 },
   };
-  return colors[field];
+  return colors[legacyField(field)];
 }
 
 // ─── Syntagma bar partitioning ────────────────────────────────────────────
@@ -396,7 +396,7 @@ function drawPergamino(
 
       // Use the syntagma's field for its ASCII character set
       const barField = barInfo[ri]?.field ?? v.field;
-      const charSet = ASCII_CHARS[barField];
+      const charSet = ASCII_CHARS[legacyField(barField)];
       const charIdx = Math.floor((t * 1.8 + ri * 7 + v.verseIndex * 13) * (1 - v.density * 0.6)) % charSet.length;
       const char = charSet[Math.abs(charIdx)];
 
@@ -502,7 +502,7 @@ function drawSerigrafia(
       const barField = barInfo[ri]?.field ?? v.field;
       const syntagma = v.syntagmas.length > 0 ? getSyntagmaForBar(v.syntagmas, numBars, ri) : null;
       const isRhymeColored = syntagma?.rhymeColor != null;
-      const charSet = SERI_CHARS[barField];
+      const charSet = SERI_CHARS[legacyField(barField)];
 
       for (let li = 0; li < LAYER_COUNT; li++) {
         const phase = t * v.speed + v.phase + ri * 0.28 + LAYER_PHASE_OFFSETS[li];

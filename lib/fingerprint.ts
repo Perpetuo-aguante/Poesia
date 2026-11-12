@@ -6,7 +6,8 @@
 // Most values are normalised to 0–1.
 // ──────────────────────────────────────────────────────────────────────────────────
 
-import { FieldColor, FIELD_COLORS, ParsedPoem, SemanticField } from './poemParser';
+import { EmotionFamily, FieldColor, FIELD_COLORS, ParsedPoem, SemanticField } from './poemParser';
+import { EMOTIONS } from './emotions';
 
 export interface FingerprintVerse {
   text: string;
@@ -15,6 +16,9 @@ export interface FingerprintVerse {
   stress: boolean[];        // one entry per metrical syllable
   field: SemanticField;
   color: FieldColor;
+  valence: number;          // -1 … 1
+  arousal: number;          // 0 … 1
+  intensity: number;        // 0–1, the verse's own emotional charge
   rhymeGroup: number;       // -1 if the verse does not rhyme
   stanza: number;
   enjambed: boolean;
@@ -46,19 +50,26 @@ export interface PoemFingerprint {
   interrogation: number;
   lexicalDensity: number;
 
-  emotions: Record<SemanticField, number>;  // share of verses per field (sums to 1)
-  turbulence: number;                 // furia, miedo, frustración, inseguridad
-  stillness: number;                  // resignación, duelo, nostalgia, tristeza
-  warmth: number;                     // amor, alegría, optimismo, honor
+  emotions: Record<SemanticField, number>;  // emotional mix of the poem over 40 emotions (sums to 1)
+  families: Record<EmotionFamily, number>;  // the same mix over the 9 families
+  valence: number;                    // -1 (painful) … 1 (pleasant)
+  arousal: number;                    // 0 (still) … 1 (agitated)
+  turbulence: number;                 // agitated, painful emotions (furia, miedo, angustia…)
+  stillness: number;                  // quiet, low emotions (melancolía, duelo, hastío, resignación…)
+  warmth: number;                     // pleasant emotions (amor, alegría, ternura, esperanza…)
   stanzaContrast: number[];           // per stanza, vs the previous one
   palette: FieldColor[];              // dominant emotion colours, strongest first
 
   verses: FingerprintVerse[];
 }
 
-const TURBULENT: SemanticField[] = ['furia', 'miedo', 'frustración', 'inseguridad'];
-const STILL: SemanticField[] = ['resignación', 'duelo', 'nostalgia', 'tristeza'];
-const WARM: SemanticField[] = ['amor', 'alegría', 'optimismo', 'honor'];
+// Each emotion's contribution to the three broad moods the art pieces read,
+// derived from its valence and arousal in lib/emotions/taxonomy.json.
+const MOOD = Object.fromEntries(EMOTIONS.map(e => [e.id, {
+  turbulence: e.arousal * (e.valence < 0 ? 1 : 0.4),
+  stillness: (1 - e.arousal) * (e.valence <= 0.1 ? 1 : 0.5),
+  warmth: Math.max(0, e.valence),
+}])) as Record<string, { turbulence: number; stillness: number; warmth: number }>;
 
 function hashString(s: string): number {
   let h = 2166136261;
@@ -74,12 +85,9 @@ export function buildFingerprint(poem: ParsedPoem): PoemFingerprint {
   const n = Math.max(1, vs.length);
   const share = (pred: (v: (typeof vs)[number]) => boolean) => vs.filter(pred).length / n;
 
-  const emotions = Object.fromEntries(
-    (Object.keys(FIELD_COLORS) as SemanticField[]).map(f => [f, 0]),
-  ) as Record<SemanticField, number>;
-  for (const v of vs) emotions[v.field] += 1 / n;
-
-  const sum = (fields: SemanticField[]) => fields.reduce((s, f) => s + emotions[f], 0);
+  const emotions = { ...poem.emotion.distribution };
+  const mood = (k: 'turbulence' | 'stillness' | 'warmth') =>
+    Math.min(1, Object.entries(emotions).reduce((s, [f, w]) => s + w * (MOOD[f]?.[k] ?? 0), 0) / 0.75);
 
   const ranked = (Object.entries(emotions) as [SemanticField, number][])
     .filter(([f, w]) => f !== 'neutral' && w > 0)
@@ -95,6 +103,9 @@ export function buildFingerprint(poem: ParsedPoem): PoemFingerprint {
     stress: Array.from(v.stress, c => c === '+'),
     field: v.field,
     color: v.fieldColor,
+    valence: v.emotion.valence,
+    arousal: v.emotion.arousal,
+    intensity: v.emotion.intensity,
     rhymeGroup: v.rhymeGroupIndex,
     stanza: v.stanzaIndex,
     enjambed: v.isEnjambment,
@@ -130,9 +141,12 @@ export function buildFingerprint(poem: ParsedPoem): PoemFingerprint {
     lexicalDensity: vs.reduce((s, v) => s + v.density, 0) / n,
 
     emotions,
-    turbulence: sum(TURBULENT),
-    stillness: sum(STILL),
-    warmth: sum(WARM),
+    families: { ...poem.emotion.families },
+    valence: poem.emotion.valence,
+    arousal: poem.emotion.arousal,
+    turbulence: mood('turbulence'),
+    stillness: mood('stillness'),
+    warmth: mood('warmth'),
     stanzaContrast: poem.stanzas.map(s => s.contrastWithPrev),
     palette,
 

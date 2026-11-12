@@ -1,0 +1,16 @@
+# Final say over the merged labels (applied last). An empty label removes the word.
+# Function words that slipped in, and very common ambiguous words toned down
+# after looking at which lemmas dominate each emotion (04_contributors.ts).
+qué
+sino
+bajo
+aquella
+unir
+parir
+apenar
+esperar	esperanza:0.6
+querer	amor:0.6,deseo:0.3
+solo	soledad:0.3
+nada	desolación:0.3
+pueblo	indignación:0.3
+perdido	desolación:0.3,nostalgia:0.3

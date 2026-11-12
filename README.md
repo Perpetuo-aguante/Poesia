@@ -6,6 +6,7 @@ This repository is the home for everything built for **Perpetuo magazine** — t
 
 - **[Poem Visualizer app](./APP.md)** — A Next.js app for visualizing poems. This currently lives at the root of the repo (it's the original project). See its README for setup and development instructions.
 - **[Servicio de escansión (`analysis-service/`)](./analysis-service/README.md)** — Python service that runs Rantanplan to scan Spanish meter, stress and rhyme for the app. Optional: the app falls back to its own parser when `RANTANPLAN_URL` isn't set.
+- **[Emotion lab (`emotion-lab/`)](./emotion-lab/README.md)** — Builds the 40-emotion taxonomy and the Spanish/English emotion lexicons (`lib/emotions/`) from a 5,000-poem Spanish corpus and a 450-poem labeled English corpus, and evaluates them.
 - **Generative art (`components/art/`)** — Geometric pieces (Vasija, Rosetón, Cordillera, Corriente, Erosión) driven by a poem fingerprint (`lib/fingerprint.ts`). To add a piece, write a component that takes `ArtProps`, describe it in `components/art/meta.ts`, and register it in `components/art/index.ts`.
 - **[`.claude/skills/`](./.claude/skills/README.md)** — Claude Code skills used for Perpetuo workflows (e.g. turning sponsorship call transcripts into proposals).
 
