@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import type { ParsedPoem } from '@/lib/poemParser';
 import { emoSlug } from '../tokens';
 import { roman } from '../poem-dom/roman';
+import EmotionMap, { secondEmotion, verseWords } from './EmotionMap';
 
 export type ScanState = 'idle' | 'pending' | 'done' | 'unavailable';
 
@@ -139,6 +140,8 @@ export default function ReadingView({ poem, scanState, onClose }: Props) {
           </ul>
         )}
 
+        <EmotionMap poem={poem} />
+
         {poem.stanzas.map((st, si) => (
           <section key={st.index} className="reading-stanza" aria-label={`Estrofa ${si + 1}`}>
             <h3 className="reading-numeral">{roman(si + 1)}</h3>
@@ -191,13 +194,20 @@ export default function ReadingView({ poem, scanState, onClose }: Props) {
                       </div>
                       <div>
                         <dt>Tono</dt>
-                        <dd>
+                        <dd title={verseWords(v) || 'Sin palabras emotivas propias: lo tiñe su contexto'}>
                           <span
                             className="emo-dot"
                             style={{ background: v.field === 'neutral' ? 'var(--color-ink-2)' : `var(--emo-${emoSlug(v.field)})` }}
                             aria-hidden
                           />{' '}
                           {v.field}
+                          {(() => {
+                            const second = secondEmotion(v);
+                            return second ? <span className="emo-second">{second}</span> : null;
+                          })()}
+                          {!v.emotion.hits.length && v.field !== 'neutral' && (
+                            <span className="muted" title="Sin palabras emotivas propias: lo tiñe su contexto"> ◦</span>
+                          )}
                         </dd>
                       </div>
                       <div className="rv-flags">
@@ -219,7 +229,9 @@ export default function ReadingView({ poem, scanState, onClose }: Props) {
           <p>
             <span className="syl-cell on">6</span> sílaba tónica y su posición · <span className="syl-cell" /> sílaba átona ·
             ≠ fuera de la medida dominante · ↵ encabalgamiento · ‖ pausa interna. Las letras marcan el esquema de rima en
-            orden de aparición; as. = asonante, cons. = consonante.
+            orden de aparición; as. = asonante, cons. = consonante. Tono: la emoción dominante del verso y, si pesa, la
+            segunda; ◦ = verso sin palabras emotivas propias, teñido por los versos vecinos. Pasa el cursor sobre el tono
+            para ver qué palabras lo producen.
           </p>
         </footer>
       </article>

@@ -1,39 +1,11 @@
 'use client';
 
-import { ParsedPoem, SemanticField } from '@/lib/poemParser';
+import { ParsedPoem, SemanticField, FIELD_COLORS } from '@/lib/poemParser';
 
-const FIELD_LABELS: Record<SemanticField, string> = {
-  nostalgia:     'nostalgia',
-  inseguridad:   'inseguridad',
-  miedo:         'miedo',
-  deber:         'deber',
-  amor:          'amor',
-  honor:         'honor',
-  duelo:         'duelo',
-  tristeza:      'tristeza',
-  'resignación': 'resignación',
-  furia:         'furia',
-  'frustración': 'frustración',
-  optimismo:     'optimismo',
-  'alegría':     'alegría',
-  neutral:       'neutro',
-};
-
-const FIELD_COLORS_CSS: Record<SemanticField, string> = {
-  nostalgia:     'rgb(185,130,70)',
-  inseguridad:   'rgb(110,135,105)',
-  miedo:         'rgb(90,20,130)',
-  deber:         'rgb(55,95,160)',
-  amor:          'rgb(225,75,110)',
-  honor:         'rgb(200,165,15)',
-  duelo:         'rgb(65,60,75)',
-  tristeza:      'rgb(65,105,190)',
-  'resignación': 'rgb(145,120,175)',
-  furia:         'rgb(230,35,15)',
-  'frustración': 'rgb(195,95,25)',
-  optimismo:     'rgb(105,200,55)',
-  'alegría':     'rgb(245,200,15)',
-  neutral:       'rgb(155,150,140)',
+const label = (f: SemanticField) => (f === 'neutral' ? 'neutro' : f);
+const colorCss = (f: SemanticField) => {
+  const c = FIELD_COLORS[f];
+  return `rgb(${c.r},${c.g},${c.b})`;
 };
 
 interface Props {
@@ -74,10 +46,10 @@ export default function PoemLegend({ poem, visible, onToggle }: Props) {
               <div key={field} className="flex items-center gap-1.5">
                 <span
                   className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: FIELD_COLORS_CSS[field] }}
+                  style={{ backgroundColor: colorCss(field) }}
                 />
                 <span className="text-[11px] text-ink/55">
-                  {FIELD_LABELS[field]}
+                  {label(field)}
                   <span className="text-ink/30 ml-1">
                     {Math.round((count / total) * 100)}%
                   </span>
